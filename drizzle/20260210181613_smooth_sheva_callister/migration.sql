@@ -1,0 +1,1 @@
+ALTER TABLE "transaction_lines" RENAME COLUMN "transaction_id" TO "transaction_lines_id";
