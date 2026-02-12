@@ -9,6 +9,7 @@ import {
 	getProductsForm,
 	getEmployeesForm,
 	addTransactionGroupNew,
+	addTransactionLinesNew,
 } from "./transaction.functions";
 
 export function useAddProduct() {
@@ -82,7 +83,17 @@ export function useAddTransactionGroupNew() {
 	return useMutation({
 		mutationFn: addTransactionGroupNew,
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["transactionGroups"] });
+			queryClient.invalidateQueries({ queryKey: ["transaction"] });
+		},
+	});
+}
+
+export function useAddTransactionLinesNew() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: addTransactionLinesNew,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["transaction"] });
 		},
 	});
 }

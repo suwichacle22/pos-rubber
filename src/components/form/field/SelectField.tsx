@@ -43,7 +43,7 @@ export function SelectField<
 					))}
 				</SelectContent>
 			</Select>
-			{isInvalid && <FieldError errors={field.state.meta.errors} />}
+			{isInvalid && <p>{field.state.meta.errors[0]}</p>}
 		</Field>
 	);
 }

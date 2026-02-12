@@ -4,6 +4,7 @@ import {
 	addFarmerSchema,
 	addEmployeeSchema,
 	transactionGroupSchemaNew,
+	transactionLinesNewFormSchema,
 } from "./transaction.schema";
 import {
 	addProductDB,
@@ -16,6 +17,7 @@ import {
 	getFarmersDB,
 	getEmployeesFormDB,
 	addTransactionGroupDB,
+	addTransactionLinesDB,
 } from "./transactions.server";
 import z from "zod";
 
@@ -75,4 +77,10 @@ export const addTransactionGroupNew = createServerFn({ method: "POST" })
 	.inputValidator(transactionGroupSchemaNew)
 	.handler(async ({ data }) => {
 		return await addTransactionGroupDB(data);
+	});
+
+export const addTransactionLinesNew = createServerFn({ method: "POST" })
+	.inputValidator(transactionLinesNewFormSchema)
+	.handler(async ({ data }) => {
+		return await addTransactionLinesDB(data);
 	});

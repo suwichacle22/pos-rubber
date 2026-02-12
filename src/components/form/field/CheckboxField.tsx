@@ -22,7 +22,7 @@ export function CheckboxField({
 				onCheckedChange={(checked: boolean) => field.handleChange(checked)}
 			/>
 			<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-			{isInvalid && <FieldError errors={field.state.meta.errors} />}
+			{isInvalid && <p>{field.state.meta.errors[0]}</p>}
 		</Field>
 	);
 }

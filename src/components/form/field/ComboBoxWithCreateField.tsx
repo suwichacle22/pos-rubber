@@ -6,14 +6,12 @@ import {
 	ComboboxItem,
 	ComboboxList,
 } from "@/components/ui/combobox";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { type FieldOrientation } from "@/utils/type";
-import { SelectData, useFieldContext } from "../formContext";
-import { useState } from "react";
+import { Field, FieldLabel } from "@/components/ui/field";
+import type { FieldOrientation } from "@/utils/type";
+import { useFieldContext } from "../formContext";
+import type { SelectData } from "../formContext";
+import { useEffect, useState } from "react";
 import { PlusIcon } from "lucide-react";
-import { useAddFarmer } from "@/utils/transaction.hooks";
-import { toast } from "sonner";
 
 interface ItemsCreatable {
 	value: string;
@@ -30,7 +28,9 @@ export function ComboBoxWithCreateField({
 	orientation = "vertical",
 }: {
 	label: string;
-	handleCreate: (label: string) => Promise<{ newValue: string; newLabel: string }>;
+	handleCreate: (
+		label: string,
+	) => Promise<{ newValue: string; newLabel: string }>;
 	selectData: SelectData[];
 	placeholder?: string;
 	emptyMessage?: string;
@@ -39,8 +39,6 @@ export function ComboBoxWithCreateField({
 	const field = useFieldContext<string>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 	const [query, setQuery] = useState("");
-
-	const addFarmer = useAddFarmer();
 
 	const trimmed = query.trim();
 	const lowered = trimmed.toLocaleLowerCase();
@@ -59,6 +57,19 @@ export function ComboBoxWithCreateField({
 					},
 				]
 			: selectData;
+
+	// Find selected item for controlled Combobox (prevents race when refetch updates items)
+	const selectedItem = field.state.value
+		? itemsForView.find((i) => i.value === field.state.value)
+		: undefined;
+
+	// Sync query when form loads with existing value (e.g. editing draft) - only when query is empty to avoid overwriting user typing
+	useEffect(() => {
+		if (query === "" && selectedItem) {
+			setQuery(selectedItem.label);
+		}
+	}, [selectedItem, query]);
+
 	return (
 		<Field orientation={orientation} data-invalid={isInvalid}>
 			<Field>
@@ -67,17 +78,22 @@ export function ComboBoxWithCreateField({
 					items={itemsForView}
 					inputValue={query}
 					onInputValueChange={setQuery}
+					value={selectedItem ?? null}
+					itemToStringLabel={(item: ItemsCreatable) => item.label}
+					itemToStringValue={(item: ItemsCreatable) => item.value}
+					isItemEqualToValue={(a, b) => a?.value === b?.value}
 					onValueChange={async (items: unknown) => {
-						const selectedItems = items as ItemsCreatable;
-						if (!selectedItems) return; // ← this prevents the crash
+						const selectedItems = items as ItemsCreatable | null;
+						if (!selectedItems) return;
 						if (selectedItems?.creatable) {
-							const newFarmer = await handleCreate(selectedItems.creatable);
-							field.handleChange(newFarmer.newValue);
-							setQuery(newFarmer.newLabel);
+							// Update form first to avoid race with refetch overwriting value
+							const result = await handleCreate(selectedItems.creatable);
+							field.handleChange(result.newValue);
+							setQuery(result.newLabel);
 							return;
 						}
-						setQuery("");
 						field.handleChange(selectedItems.value);
+						setQuery(selectedItems.label);
 					}}
 				>
 					<ComboboxInput placeholder={placeholder} />
@@ -99,7 +115,7 @@ export function ComboBoxWithCreateField({
 					</ComboboxContent>
 				</Combobox>
 			</Field>
-			{isInvalid && <FieldError errors={field.state.meta.errors} />}
+			{isInvalid && <p>{field.state.meta.errors[0]}</p>}
 		</Field>
 	);
 }

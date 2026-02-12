@@ -28,12 +28,10 @@ export const transactionGroupSchemaNew = transactionGroupSchema.omit({
 });
 
 export type TransactionGroupNewType = z.infer<typeof transactionGroupSchemaNew>;
-// TransactionLine Schema
-// Based on transaction_lines table schema
-// Nullable columns use transform to convert empty strings to null for database
-// Fields ordered to match database schema (excluding createdAt and updatedAt)
+
 export const transactionLineSchema = z.object({
-	tranasctionLinesId: z
+	transactionGroupId: z.string().min(1),
+	transactionLinesId: z
 		.string()
 		.nullable()
 		.transform((val) => (val === "" || !val ? null : val)),
@@ -42,10 +40,7 @@ export const transactionLineSchema = z.object({
 		.string()
 		.nullable()
 		.transform((val) => (val === "" || !val ? null : val)),
-	productId: z
-		.string()
-		.nullable()
-		.transform((val) => (val === "" || !val ? null : val)),
+	productId: z.string().min(1),
 	isVehicle: z.boolean(),
 	carLicense: z
 		.string()
@@ -121,15 +116,23 @@ export const transactionLineSchema = z.object({
 		.string()
 		.nullable()
 		.transform((val) => (val === "" || !val ? null : val)),
+	totalNetAmount: z
+		.string()
+		.nullable()
+		.transform((val) => (val === "" || !val ? null : val)),
 });
 
-export type TransactionLineDBSchema = typeof transactionLines.$inferInsert;
+export const transactionLinesNewFormSchema = z.array(
+	transactionLineSchema.omit({
+		transactionLinesId: true,
+	}),
+);
 
 export const transactionLinesDefaultForm = () => {
 	return {
 		// transactionId is auto-generated, not included in default form
 		transactionLinesId: "",
-		transactionLineNo: 1,
+		transactionLineNo: 0,
 		employeeId: "",
 		productId: "",
 		isVehicle: false,
@@ -163,7 +166,7 @@ export const transactionFormOptions = formOptions({
 		transactionGroup: {
 			transactionGroupId: "",
 			groupName: "",
-			farmerId: "",
+			farmerId: "", //remvoe after test
 			status: "pending",
 		},
 		transactionLines: [transactionLinesDefaultForm()],
@@ -176,7 +179,11 @@ export const transactionFormSchema = z.object({
 });
 
 export type TransactionNewGroupType = z.infer<typeof transactionGroupSchema>;
-export type TransactionNewLineType = z.infer<typeof transactionLineSchema>;
+export type TransactionNewLineType = z.infer<
+	typeof transactionLinesNewFormSchema
+>;
+
+export type TransactionLineDBSchema = typeof transactionLines.$inferInsert;
 
 export const addProductSchema = z.object({
 	productName: z

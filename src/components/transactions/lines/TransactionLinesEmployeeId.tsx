@@ -24,7 +24,6 @@ export const TransactionLinesEmployeeId = withForm({
 				const { employeeId, displayName } = await addEmployee.mutateAsync({
 					data: { farmerId, displayName: label, phone: null, address: null },
 				});
-				form.setFieldValue(`transactionLines[${index}].employeeId`, employeeId);
 				toast.success(`สร้างลูกค้า "${label}" สำเร็จ`);
 				return {
 					newValue: employeeId,

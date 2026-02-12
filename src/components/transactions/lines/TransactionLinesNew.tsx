@@ -42,6 +42,14 @@ export const TransactionLine = withForm({
 					<FieldGroup>
 						<form.AppField
 							name={`transactionLines[${index}].productId`}
+							validators={{
+								onSubmit: ({ value }) => {
+									if (!value) {
+										return "กรุณาเลือกสินค้า";
+									}
+									return;
+								},
+							}}
 							children={(field) => (
 								<field.ComboBoxField
 									label="สินค้า"
@@ -51,9 +59,9 @@ export const TransactionLine = withForm({
 						/>
 						<TransactionLineVehicle form={form} index={index} />
 						<TransactionLineWeight form={form} index={index} />
-						<TransactionLineSplit form={form} index={index} />
+						{/* <TransactionLineSplit form={form} index={index} /> */}
 						<TransactionLineTransportFee form={form} index={index} />
-						<TransactionLineHarvestRate form={form} index={index} />
+						{/* <TransactionLineHarvestRate form={form} index={index} /> */}
 					</FieldGroup>
 				</CardContent>
 			</Card>

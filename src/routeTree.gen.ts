@@ -14,6 +14,7 @@ import { Route as ProductsRouteImport } from './routes/products'
 import { Route as FarmerRouteImport } from './routes/farmer'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TransactionNewRouteImport } from './routes/transaction/new'
+import { Route as TransactionGroupIdRouteImport } from './routes/transaction/$groupId'
 
 const TransactionsRoute = TransactionsRouteImport.update({
   id: '/transactions',
@@ -40,12 +41,18 @@ const TransactionNewRoute = TransactionNewRouteImport.update({
   path: '/transaction/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TransactionGroupIdRoute = TransactionGroupIdRouteImport.update({
+  id: '/transaction/$groupId',
+  path: '/transaction/$groupId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/farmer': typeof FarmerRoute
   '/products': typeof ProductsRoute
   '/transactions': typeof TransactionsRoute
+  '/transaction/$groupId': typeof TransactionGroupIdRoute
   '/transaction/new': typeof TransactionNewRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/farmer': typeof FarmerRoute
   '/products': typeof ProductsRoute
   '/transactions': typeof TransactionsRoute
+  '/transaction/$groupId': typeof TransactionGroupIdRoute
   '/transaction/new': typeof TransactionNewRoute
 }
 export interface FileRoutesById {
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/farmer': typeof FarmerRoute
   '/products': typeof ProductsRoute
   '/transactions': typeof TransactionsRoute
+  '/transaction/$groupId': typeof TransactionGroupIdRoute
   '/transaction/new': typeof TransactionNewRoute
 }
 export interface FileRouteTypes {
@@ -70,15 +79,23 @@ export interface FileRouteTypes {
     | '/farmer'
     | '/products'
     | '/transactions'
+    | '/transaction/$groupId'
     | '/transaction/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/farmer' | '/products' | '/transactions' | '/transaction/new'
+  to:
+    | '/'
+    | '/farmer'
+    | '/products'
+    | '/transactions'
+    | '/transaction/$groupId'
+    | '/transaction/new'
   id:
     | '__root__'
     | '/'
     | '/farmer'
     | '/products'
     | '/transactions'
+    | '/transaction/$groupId'
     | '/transaction/new'
   fileRoutesById: FileRoutesById
 }
@@ -87,6 +104,7 @@ export interface RootRouteChildren {
   FarmerRoute: typeof FarmerRoute
   ProductsRoute: typeof ProductsRoute
   TransactionsRoute: typeof TransactionsRoute
+  TransactionGroupIdRoute: typeof TransactionGroupIdRoute
   TransactionNewRoute: typeof TransactionNewRoute
 }
 
@@ -127,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TransactionNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/transaction/$groupId': {
+      id: '/transaction/$groupId'
+      path: '/transaction/$groupId'
+      fullPath: '/transaction/$groupId'
+      preLoaderRoute: typeof TransactionGroupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -135,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   FarmerRoute: FarmerRoute,
   ProductsRoute: ProductsRoute,
   TransactionsRoute: TransactionsRoute,
+  TransactionGroupIdRoute: TransactionGroupIdRoute,
   TransactionNewRoute: TransactionNewRoute,
 }
 export const routeTree = rootRouteImport

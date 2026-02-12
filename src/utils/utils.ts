@@ -121,3 +121,12 @@ export function calculateVehicleWeight(
 	}
 	return (weightVehicleInNum - weightVehicleOutNum).toString();
 }
+
+export function calculateTransactionTotalNetAmount(
+	totalAmount: string,
+	promotionAmount: string,
+) {
+	const totalAmountNum = parseFloat(totalAmount) || 0;
+	const promotionAmountNum = parseFloat(promotionAmount) || 0;
+	return (totalAmountNum + promotionAmountNum).toString();
+}

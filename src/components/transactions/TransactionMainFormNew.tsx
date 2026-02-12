@@ -3,6 +3,7 @@ import {
 	transactionFormSchema,
 	transactionGroupSchemaNew,
 	transactionLinesDefaultForm,
+	transactionLinesNewFormSchema,
 } from "@/utils/transaction.schema";
 import { useAppForm } from "../form/formContext";
 import { TransactionGroup } from "./group/TransactionGroupNew";
@@ -12,9 +13,13 @@ import { TransactionLine } from "./lines/TransactionLinesNew";
 import { Button } from "../ui/button";
 import {
 	useAddTransactionGroupNew,
+	useAddTransactionLinesNew,
 	useGetProductsForm,
 } from "@/utils/transaction.hooks";
 import { PlusIcon } from "lucide-react";
+import { SubmitLoading } from "../form/component/SubmitLoading";
+import { calculateTransactionTotalNetAmount } from "@/utils/utils";
+import { redirect } from "@tanstack/react-router";
 
 type FormMeta = {
 	submitAction: "SaveDraft" | "Submit" | null;
@@ -27,10 +32,11 @@ const defaultMeta: FormMeta = {
 export function TransactionMainFormNew() {
 	const { data: productsFormData = [] } = useGetProductsForm();
 	const addTransactionGroupNew = useAddTransactionGroupNew();
+	const addTransactionLinesNew = useAddTransactionLinesNew();
 	const form = useAppForm({
 		...transactionFormOptions,
 		onSubmitMeta: defaultMeta,
-		onSubmit: ({ value, meta }) => {
+		onSubmit: async ({ value, meta }) => {
 			if (meta.submitAction === "SaveDraft") {
 				const group = transactionGroupSchemaNew.parse(value.transactionGroup);
 				group.status = "pending";
@@ -38,11 +44,34 @@ export function TransactionMainFormNew() {
 			if (meta.submitAction === "Submit") {
 				const group = transactionGroupSchemaNew.parse(value.transactionGroup);
 				group.status = "submitted";
-				addTransactionGroupNew.mutateAsync({ data: group });
+				const [groupData] = await addTransactionGroupNew.mutateAsync({
+					data: group,
+				});
+
+				//line
+				const initLines = value.transactionLines;
+				const lineswithGroupID = initLines.map((line, index) => {
+					return {
+						...line,
+						transactionGroupId: groupData.transactionGroupId,
+						transactionLineNo: index + 1,
+						totalNetAmount: calculateTransactionTotalNetAmount(
+							line.totalAmount,
+							line.promotionAmount,
+						),
+					};
+				});
+				const lines = transactionLinesNewFormSchema.parse(lineswithGroupID);
+				await addTransactionLinesNew.mutateAsync({
+					data: lines,
+				});
+				form.reset();
+				redirect({ to: "/transactions" });
 			}
+
 			toast.success("สำเร็จ", {
 				description:
-					meta.submitAction === "SaveDraft" ? "บันทึกเป็นร่างสำเร็จ" : "บันทึกสำเร็จ",
+					meta.submitAction === "SaveDraft" ? "บันทึกแบบร่างสำเร็จ" : "บันทึกสำเร็จ",
 			});
 		},
 	});
@@ -106,6 +135,9 @@ export function TransactionMainFormNew() {
 						</form.AppForm>
 					</div>
 				</div>
+				<form.AppForm>
+					<SubmitLoading />
+				</form.AppForm>
 			</form>
 		</div>
 	);

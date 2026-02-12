@@ -1,8 +1,23 @@
 import { db } from "@/db";
-import { products, farmers, employees, transactionGroups } from "@/db/schema";
+import {
+	products,
+	farmers,
+	employees,
+	transactionGroups,
+	transactionLines,
+} from "@/db/schema";
 import type { ProductSplitTypeEnum, TransactionStatusEnum } from "./type";
 import { asc, eq } from "drizzle-orm";
-import { TransactionGroupNewType } from "./transaction.schema";
+import {
+	TransactionGroupNewType,
+	TransactionLineDBSchema,
+	TransactionNewLineType,
+} from "./transaction.schema";
+import {
+	printer as ThermalPrinter,
+	types as PrinterTypes,
+	characterSet,
+} from "node-thermal-printer";
 
 export async function addProductDB(data: {
 	productName: string;
@@ -96,4 +111,31 @@ export async function addTransactionGroupDB(data: TransactionGroupNewType) {
 			status: data.status,
 		})
 		.returning();
+}
+
+export async function addTransactionLinesDB(data: TransactionNewLineType) {
+	const newTransactionLines = await db
+		.insert(transactionLines)
+		.values(data)
+		.returning();
+	return newTransactionLines;
+}
+
+export type TransactionLineDBType = typeof transactionLines.$inferSelect;
+
+//data: TransactionLineDBType
+export async function printTransactionLine() {
+	console.log("print test");
+	let printer = new ThermalPrinter({
+		type: PrinterTypes.EPSON,
+		interface: "tcp://192.168.1.181",
+	});
+
+	printer.println("ทรัพย์ทวี");
+	try {
+		let execute = await printer.execute();
+		return { result: "print done" };
+	} catch (e) {
+		return { result: "print fail" };
+	}
 }

@@ -25,7 +25,6 @@ export const TransactionGroup = withForm({
 				const { farmerId, displayName } = await addFarmer.mutateAsync({
 					data: { displayName: label, phone: null },
 				});
-				form.setFieldValue("transactionGroup.farmerId", farmerId);
 				toast.success(`สร้างลูกค้า "${label}" สำเร็จ`);
 				return {
 					newValue: farmerId,
@@ -46,6 +45,14 @@ export const TransactionGroup = withForm({
 					<FieldGroup>
 						<form.AppField
 							name="transactionGroup.farmerId"
+							validators={{
+								onSubmit: ({ value }) => {
+									if (!value) {
+										return "กรุณาใส่ชื่อลูกค้า";
+									}
+									return;
+								},
+							}}
 							children={(field) => (
 								<field.ComboBoxWithCreateField
 									label="ชื่อลูกค้า"

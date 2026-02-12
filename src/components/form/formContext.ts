@@ -6,6 +6,7 @@ import { NumericField } from "./field/NumericField";
 import { SelectField } from "./field/SelectField";
 import { TextField } from "./field/TextField";
 import { ComboBoxWithCreateField } from "./field/ComboBoxWithCreateField";
+import { SubmitLoading } from "./component/SubmitLoading";
 
 export const { fieldContext, formContext, useFieldContext, useFormContext } =
 	createFormHookContexts();
@@ -21,7 +22,7 @@ export const { useAppForm, withForm, withFieldGroup } = createFormHook({
 		CheckboxField,
 		ComboBoxWithCreateField,
 	},
-	formComponents: { SubmitButton },
+	formComponents: { SubmitButton, SubmitLoading },
 });
 
 export type SelectData = { label: string; value: string };
