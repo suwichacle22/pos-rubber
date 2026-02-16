@@ -43,7 +43,7 @@ export function EmployeeForm() {
 				form.handleSubmit();
 			}}
 		>
-			<Card>
+			<Card className="min-w-[380px] md:min-w-[660px]">
 				<CardHeader>
 					<CardTitle>เพิ่มพนักงาน</CardTitle>
 				</CardHeader>

@@ -32,7 +32,7 @@ export default function Header() {
 			</NavigationMenu>
 			<ModeToggle />
 			<Button>
-				<Link to="/transaction/new">เพิ่มรายการ</Link>
+				<Link to="/transaction/normal">เพิ่มรายการ</Link>
 			</Button>
 		</div>
 	);

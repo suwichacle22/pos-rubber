@@ -88,6 +88,7 @@ export const TransactionLineSplit = withForm({
 									`transactionLines[${index}].employeeAmount`,
 									"",
 								);
+								form.setFieldValue(`transactionLines[${index}].employeeId`, "");
 							}
 						},
 					}}
@@ -177,6 +178,9 @@ export const TransactionLineSplit = withForm({
 													calculateTransportationFeeAmount(
 														value,
 														form.getFieldValue(
+															`transactionLines[${index}].employeeAmount`,
+														),
+														form.getFieldValue(
 															`transactionLines[${index}].weight`,
 														),
 														form.getFieldValue(
@@ -236,6 +240,9 @@ export const TransactionLineSplit = withForm({
 											onChange: ({ value }) => {
 												const { employeeTransportationFeeAmount } =
 													calculateTransportationFeeAmount(
+														form.getFieldValue(
+															`transactionLines[${index}].farmerAmount`,
+														),
 														value,
 														form.getFieldValue(
 															`transactionLines[${index}].weight`,

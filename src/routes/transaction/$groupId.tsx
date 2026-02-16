@@ -6,5 +6,5 @@ export const Route = createFileRoute("/transaction/$groupId")({
 
 function RouteComponent() {
 	const { groupId } = Route.useParams();
-	return <div>Hello "/transaction/$groupId"!</div>;
+	return <div>Hello {`/transaction/${groupId}`}!</div>;
 }

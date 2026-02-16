@@ -1,5 +1,5 @@
 {
-  "projectName": "pos",
+  "projectName": "pos-rubber",
   "mode": "file-router",
   "typescript": true,
   "packageManager": "bun",

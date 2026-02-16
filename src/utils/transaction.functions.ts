@@ -18,6 +18,7 @@ import {
 	getEmployeesFormDB,
 	addTransactionGroupDB,
 	addTransactionLinesDB,
+	printTransactionGroupDB,
 } from "./transactions.server";
 import z from "zod";
 
@@ -83,4 +84,10 @@ export const addTransactionLinesNew = createServerFn({ method: "POST" })
 	.inputValidator(transactionLinesNewFormSchema)
 	.handler(async ({ data }) => {
 		return await addTransactionLinesDB(data);
+	});
+
+export const printTransactionGroup = createServerFn({ method: "POST" })
+	.inputValidator(z.object({ transactionGroupID: z.string() }))
+	.handler(async ({ data }) => {
+		return await printTransactionGroupDB(data.transactionGroupID);
 	});

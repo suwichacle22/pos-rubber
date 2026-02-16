@@ -1,3 +1,8 @@
+import { TransactionLineDBType } from "./transactions.server";
+import { format } from "date-fns";
+import moment from "moment";
+import { th, enUS } from "date-fns/locale";
+
 export function calculateTotalAmount(weight: string, price: string) {
 	const weightNum = parseFloat(weight);
 	const priceNum = parseFloat(price);
@@ -37,22 +42,24 @@ export function calculateSplitAmount(totalAmount: string, ratio: string) {
 }
 
 export function calculateTransportationFeeAmount(
-	totalAmount: string,
+	farmerAmount: string,
+	employeeAmount: string,
 	totalWeight: string,
 	transportationFee: string,
 ) {
 	const totalWeightNum = parseFloat(totalWeight);
-	const totalAmountNum = parseFloat(totalAmount);
+	const farmerAmountNum = parseFloat(farmerAmount);
+	const employeeAmountNum = parseFloat(employeeAmount);
 	const transportationFeeNum = parseFloat(transportationFee);
 
 	const transportationFeeAmount = transportationFeeNum
 		? Math.round(totalWeightNum * transportationFeeNum).toString()
 		: "";
 	const farmerTransportationFeeAmount = transportationFeeAmount
-		? (parseFloat(transportationFeeAmount) + totalAmountNum).toString()
+		? (parseFloat(transportationFeeAmount) + farmerAmountNum).toString()
 		: "";
 	const employeeTransportationFeeAmount = transportationFeeAmount
-		? (totalAmountNum - parseFloat(transportationFeeAmount)).toString()
+		? (employeeAmountNum - parseFloat(transportationFeeAmount)).toString()
 		: "";
 	return {
 		transportationFeeAmount,
@@ -130,3 +137,92 @@ export function calculateTransactionTotalNetAmount(
 	const promotionAmountNum = parseFloat(promotionAmount) || 0;
 	return (totalAmountNum + promotionAmountNum).toString();
 }
+
+export function formatNumber(value: string) {
+	const num = parseFloat(value);
+	if (Number.isNaN(num)) return String(value ?? "");
+	if (Number.isInteger(num)) return num.toString(); // 35 → "35"
+	return num.toFixed(2); // 35.3 → "35.30", 35.30 → "35.30"
+}
+
+export function formatRatio(value: string) {
+	const num = parseFloat(value);
+	const ratio = num * 100;
+	return ratio.toFixed(0).toString();
+}
+
+export function summaryTransactionText(data: TransactionLineDBType) {
+	const {
+		weight,
+		price,
+		totalAmount,
+		farmerAmount,
+		farmerRatio,
+		transportationFeeFarmerAmount,
+		employeeAmount,
+		employeeRatio,
+		transportationFeeEmployeeAmount,
+		transportationFeeAmount,
+	} = data;
+	const formatWeight = formatNumber(weight);
+	const formatPrice = formatNumber(price);
+	const formatTotalAmount = formatNumber(totalAmount);
+	const formatFarmerRatio = formatRatio(farmerRatio);
+	const formatFarmerAmount = formatNumber(farmerAmount);
+	const formatEmployeeRatio = formatRatio(employeeRatio);
+	const formatEmployeeAmount = formatNumber(employeeAmount);
+	const formatTransportationFeeAmount = formatNumber(transportationFeeAmount);
+	const formatTransportationFeeFarmerAmount = formatNumber(
+		transportationFeeFarmerAmount,
+	);
+	const formatTransportationFeeEmployeeAmount = formatNumber(
+		transportationFeeEmployeeAmount,
+	);
+
+	const summaryCalculateText = `${formatWeight} x ${formatPrice} = ${formatTotalAmount}`;
+	const farmerAmountText = `${formatFarmerRatio}:  ${formatFarmerAmount}`;
+	const employeeAmountText = `${formatEmployeeRatio}:  ${formatEmployeeAmount}`;
+	const farmerCalculateTransportationFeeText = `${formatFarmerRatio}: ${formatFarmerAmount} + ${formatTransportationFeeAmount} `;
+	const farmerAmountTransportationFeeText = `= ${formatTransportationFeeFarmerAmount}`;
+	const farmerAllTransportationFeeText = `${farmerCalculateTransportationFeeText} ${farmerAmountTransportationFeeText}`;
+	const employeeCalculateTransportationFeeText = `${formatEmployeeRatio}: ${formatEmployeeAmount} - ${formatTransportationFeeAmount} `;
+	const employeeAmountTransportationFeeText = `= ${formatTransportationFeeEmployeeAmount}`;
+	const employeeAllTransportationFeeText = `${employeeCalculateTransportationFeeText} ${employeeAmountTransportationFeeText}`;
+	return {
+		summaryCalculateText,
+		farmerAmountText,
+		employeeAmountText,
+		farmerCalculateTransportationFeeText,
+		farmerAmountTransportationFeeText,
+		farmerAllTransportationFeeText,
+		employeeCalculateTransportationFeeText,
+		employeeAmountTransportationFeeText,
+		employeeAllTransportationFeeText,
+	};
+}
+
+const monthThai = {
+	"01": "มกราคม",
+	"02": "กุมภาพันธ์",
+	"03": "มีนาคม",
+	"04": "เมษายน",
+	"05": "พฤษภาคม",
+	"06": "มิถุนายน",
+	"07": "กรกฎาคม",
+	"08": "สิงหาคม",
+	"09": "กันยายน",
+	"10": "ตุลาคม",
+	"11": "พฤศจิกายน",
+	"12": "ธันวาคม",
+};
+
+export const formatDateThai = (inputDate: Date) => {
+	const day = format(inputDate, "dd");
+	const month =
+		monthThai[(format(inputDate, "MM") ?? "01") as keyof typeof monthThai];
+	const year = String(parseInt(format(inputDate, "yyyy"), 10) + 543);
+
+	const dateThai = `${day} ${month} ${year}`;
+	const time = format(inputDate, "HH:mm");
+	return { dateThai, time };
+};

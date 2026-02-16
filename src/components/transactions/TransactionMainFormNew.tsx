@@ -15,11 +15,14 @@ import {
 	useAddTransactionGroupNew,
 	useAddTransactionLinesNew,
 	useGetProductsForm,
+	usePrintTransactionGroup,
 } from "@/utils/transaction.hooks";
 import { PlusIcon } from "lucide-react";
 import { SubmitLoading } from "../form/component/SubmitLoading";
 import { calculateTransactionTotalNetAmount } from "@/utils/utils";
-import { redirect } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { useStore } from "@tanstack/react-store";
+import TransactionSummary from "./group/TransactionSummary";
 
 type FormMeta = {
 	submitAction: "SaveDraft" | "Submit" | null;
@@ -30,9 +33,11 @@ const defaultMeta: FormMeta = {
 };
 
 export function TransactionMainFormNew() {
+	const navigate = useNavigate();
 	const { data: productsFormData = [] } = useGetProductsForm();
 	const addTransactionGroupNew = useAddTransactionGroupNew();
 	const addTransactionLinesNew = useAddTransactionLinesNew();
+	const printTransactionGroup = usePrintTransactionGroup();
 	const form = useAppForm({
 		...transactionFormOptions,
 		onSubmitMeta: defaultMeta,
@@ -40,6 +45,29 @@ export function TransactionMainFormNew() {
 			if (meta.submitAction === "SaveDraft") {
 				const group = transactionGroupSchemaNew.parse(value.transactionGroup);
 				group.status = "pending";
+				const [groupData] = await addTransactionGroupNew.mutateAsync({
+					data: group,
+				});
+				//line
+				const initLines = value.transactionLines;
+				const lineswithGroupID = initLines.map((line, index) => {
+					return {
+						...line,
+						transactionGroupId: groupData.transactionGroupId,
+						transactionLineNo: index + 1,
+						totalNetAmount: calculateTransactionTotalNetAmount(
+							line.totalAmount,
+							line.promotionAmount,
+						),
+					};
+				});
+				const lines = transactionLinesNewFormSchema.parse(lineswithGroupID);
+				await addTransactionLinesNew.mutateAsync({
+					data: lines,
+				});
+
+				form.reset();
+				navigate({ to: `/transaction/${groupData.transactionGroupId}` });
 			}
 			if (meta.submitAction === "Submit") {
 				const group = transactionGroupSchemaNew.parse(value.transactionGroup);
@@ -65,8 +93,13 @@ export function TransactionMainFormNew() {
 				await addTransactionLinesNew.mutateAsync({
 					data: lines,
 				});
+
+				await printTransactionGroup.mutateAsync({
+					data: { transactionGroupID: groupData.transactionGroupId },
+				});
+
 				form.reset();
-				redirect({ to: "/transactions" });
+				navigate({ to: "/" });
 			}
 
 			toast.success("สำเร็จ", {
@@ -75,6 +108,10 @@ export function TransactionMainFormNew() {
 			});
 		},
 	});
+	const LinesData = useStore(
+		form.store,
+		(state) => state.values.transactionLines,
+	);
 	return (
 		<div className="flex flex-col gap-4 justify-center items-center p-4">
 			<form
@@ -84,7 +121,7 @@ export function TransactionMainFormNew() {
 					form.handleSubmit();
 				}}
 			>
-				<div className="flex flex-col gap-4">
+				<div className="flex flex-col min-w-[380px] md:min-w-[660px] gap-4">
 					<TransactionGroup form={form} />
 					<form.AppField name="transactionLines" mode="array">
 						{(field) => {
@@ -115,10 +152,11 @@ export function TransactionMainFormNew() {
 							);
 						}}
 					</form.AppField>
+					{LinesData.length > 1 && <TransactionSummary lines={LinesData} />}
 					<div className="grid grid-cols-2 gap-2 h-[100px] justify-center items-center">
 						<form.AppForm>
 							<SubmitButton
-								label="บันทึกเป็นร่าง"
+								label="บันทึกแบบร่าง"
 								variant={"outline"}
 								handleSubmit={() => {
 									form.handleSubmit({ submitAction: "SaveDraft" });

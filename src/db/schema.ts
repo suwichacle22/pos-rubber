@@ -35,8 +35,8 @@ export const farmers = pgTable("farmers", {
 	farmerId: uuid("farmer_id").primaryKey().notNull().defaultRandom(),
 	displayName: text("display_name").notNull().unique(),
 	phone: text("phone"),
-	createdAt: timestamp("created_at").defaultNow(),
-	updatedAt: timestamp("updated_at")
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date()),
 });
@@ -49,8 +49,8 @@ export const employees = pgTable("employees", {
 	displayName: text("display_name").notNull(),
 	address: text("address"),
 	phone: text("phone"),
-	createdAt: timestamp("created_at").defaultNow(),
-	updatedAt: timestamp("updated_at")
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date()),
 });
@@ -59,8 +59,8 @@ export const products = pgTable("products", {
 	productId: uuid("product_id").primaryKey().defaultRandom(),
 	productName: text("product_name").notNull().unique(),
 	defaultSplitType: productSplitTypeEnum("default_split_type").notNull(),
-	createdAt: timestamp("created_at").defaultNow(),
-	updatedAt: timestamp("updated_at")
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date()),
 });
@@ -71,7 +71,7 @@ export const productPrices = pgTable("product_prices", {
 		.notNull()
 		.references(() => products.productId),
 	price: numeric("price", { precision: 10, scale: 2 }).notNull(),
-	createdAt: timestamp("created_at").defaultNow(),
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 export const splitDefaults = pgTable("split_defaults", {
@@ -97,8 +97,8 @@ export const splitDefaults = pgTable("split_defaults", {
 		precision: 3,
 		scale: 2,
 	}),
-	createdAt: timestamp("created_at").defaultNow(),
-	updatedAt: timestamp("updated_at")
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date()),
 });
@@ -109,13 +109,13 @@ export const transactionGroups = pgTable("transaction_groups", {
 	groupName: text("group_name"),
 	status: transactionStatusEnum("status").notNull().default("pending"),
 	printCount: integer("print_count").notNull().default(0),
-	createdAt: timestamp("created_at").defaultNow(),
-	submittedAt: timestamp("submitted_at"),
-	updatedAt: timestamp("updated_at")
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+	submittedAt: timestamp("submitted_at", { withTimezone: true }),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date()),
 	isDeleted: boolean("is_deleted").notNull().default(false),
-	deletedAt: timestamp("deleted_at"), // Soft delete
+	deletedAt: timestamp("deleted_at", { withTimezone: true }), // Soft delete
 });
 
 export const transactionLines = pgTable("transaction_lines", {
@@ -174,6 +174,10 @@ export const transactionLines = pgTable("transaction_lines", {
 		precision: 3,
 		scale: 2,
 	}),
+	transportationFeeAmount: numeric("transportation_fee_amount", {
+		precision: 10,
+		scale: 2,
+	}),
 	transportationFeeFarmerAmount: numeric("transportation_fee_farmer_amount", {
 		precision: 10,
 		scale: 2,
@@ -207,11 +211,11 @@ export const transactionLines = pgTable("transaction_lines", {
 		precision: 10,
 		scale: 2,
 	}),
-	createdAt: timestamp("created_at").defaultNow(),
-	updatedAt: timestamp("updated_at")
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => new Date()),
 	printCount: integer("print_count").notNull().default(0),
 	isDeleted: boolean("is_deleted").notNull().default(false),
-	deletedAt: timestamp("deleted_at"),
+	deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });

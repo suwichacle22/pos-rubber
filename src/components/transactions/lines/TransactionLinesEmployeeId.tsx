@@ -38,6 +38,18 @@ export const TransactionLinesEmployeeId = withForm({
 			<FieldGroup>
 				<form.AppField
 					name={`transactionLines[${index}].employeeId`}
+					validators={{
+						onSubmit: ({ value }) => {
+							if (
+								!value &&
+								form.getFieldValue(`transactionLines[${index}].isSplit`) !==
+									"none"
+							) {
+								return "กรุณาใส่ชื่อลูกค้า";
+							}
+							return;
+						},
+					}}
 					children={(field) => (
 						<field.ComboBoxWithCreateField
 							label="ชื่อคนตัด"

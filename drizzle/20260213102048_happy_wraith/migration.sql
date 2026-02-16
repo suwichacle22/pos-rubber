@@ -1,0 +1,1 @@
+ALTER TABLE "transaction_lines" ADD COLUMN "transportation_fee_amount" numeric(10,2);

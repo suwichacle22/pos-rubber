@@ -1,22 +1,38 @@
-import { createServerFn } from "@tanstack/react-start";
-import { Button } from "../ui/button";
-import { printTransactionLine } from "@/utils/transactions.server";
-import { useMutation } from "@tanstack/react-query";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useGetDailySummary } from "@/utils/dashboard.hooks";
+import { formatNumber } from "@/utils/utils";
 
-export default function SummaryProducts() {
-	const handlePrintServer = createServerFn({ method: "POST" }).handler(
-		async () => {
-			await printTransactionLine();
-		},
-	);
+export default function SummaryProducts({ date }: { date: string }) {
+	const { data, isLoading } = useGetDailySummary(date);
 
-	function usePrint() {
-		return useMutation({ mutationFn: handlePrintServer });
-	}
-	const print = usePrint();
 	return (
-		<div>
-			<Button onClick={() => print.mutate({})}>Test Print</Button>
-		</div>
+		<Card className="">
+			<CardHeader>
+				<CardTitle>สรุปรายวัน</CardTitle>
+			</CardHeader>
+			<CardContent>
+				{isLoading ? (
+					<p className="text-muted-foreground">กำลังโหลด...</p>
+				) : !data || data.length === 0 ? (
+					<p className="text-muted-foreground">ไม่มีรายการในวันนี้</p>
+				) : (
+					<div className="space-y-2">
+						{data.map((row) => (
+							<div
+								key={row.productName}
+								className="flex items-center justify-between gap-4"
+							>
+								<span className="font-medium">{row.productName}:</span>
+								<span>
+									{formatNumber(row.totalWeight)} kg ×{" "}
+									{formatNumber(row.averagePrice)} ={" "}
+									{formatNumber(row.totalAmount)}
+								</span>
+							</div>
+						))}
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }

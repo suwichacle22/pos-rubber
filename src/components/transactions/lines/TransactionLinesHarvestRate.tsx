@@ -36,6 +36,10 @@ export const TransactionLineHarvestRate = withForm({
 												`transactionLines[${index}].harvestRate`,
 												"",
 											);
+											form.setFieldValue(
+												`transactionLines[${index}].employeeId`,
+												"",
+											);
 										}
 										if (value) {
 											form.setFieldValue(

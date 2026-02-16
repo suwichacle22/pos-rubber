@@ -10,6 +10,7 @@ import {
 	getEmployeesForm,
 	addTransactionGroupNew,
 	addTransactionLinesNew,
+	printTransactionGroup,
 } from "./transaction.functions";
 
 export function useAddProduct() {
@@ -95,5 +96,11 @@ export function useAddTransactionLinesNew() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["transaction"] });
 		},
+	});
+}
+
+export function usePrintTransactionGroup() {
+	return useMutation({
+		mutationFn: printTransactionGroup,
 	});
 }

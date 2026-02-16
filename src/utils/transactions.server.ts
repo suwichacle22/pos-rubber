@@ -8,16 +8,16 @@ import {
 } from "@/db/schema";
 import type { ProductSplitTypeEnum, TransactionStatusEnum } from "./type";
 import { asc, eq } from "drizzle-orm";
-import {
+import type {
 	TransactionGroupNewType,
-	TransactionLineDBSchema,
 	TransactionNewLineType,
+	TransactionGroupLinesType,
 } from "./transaction.schema";
 import {
 	printer as ThermalPrinter,
 	types as PrinterTypes,
-	characterSet,
 } from "node-thermal-printer";
+import { formatDateThai, summaryTransactionText } from "./utils";
 
 export async function addProductDB(data: {
 	productName: string;
@@ -121,21 +121,145 @@ export async function addTransactionLinesDB(data: TransactionNewLineType) {
 	return newTransactionLines;
 }
 
-export type TransactionLineDBType = typeof transactionLines.$inferSelect;
+// export async function getTransactionGroupDB(transactionGroupId: string) {
+// 	return await db.query.transactionGroups.findFirst({
+// 		where: { transactionGroupId },
+// 		with: {
+// 			transactionLines: true,
+// 			products: true,
+// 			farmers: true,
+// 			employees: true,
+// 		},
+// 	});
+// }
 
+//print section
 //data: TransactionLineDBType
-export async function printTransactionLine() {
-	console.log("print test");
-	let printer = new ThermalPrinter({
-		type: PrinterTypes.EPSON,
-		interface: "tcp://192.168.1.181",
+let printer = new ThermalPrinter({
+	type: PrinterTypes.EPSON,
+	interface: "tcp://192.168.1.181",
+	width: 42,
+});
+
+async function printTransactionHeader() {
+	printer.println("ทรัพย์ทวี");
+	printer.println("โทร: 089-474-0467");
+	printer.println("เปิดทุกวัน 7.00 - 17.00 น.");
+	printer.println("------------------------------------------");
+	// printer.println(`ชื่อ: ${farmer?.displayName}`);
+	// printer.println(
+	// 	`วันที่และเวลา: ${formatDateThai(transactionLine.createdAt ?? new Date()).dateThai} ${formatDateThai(transactionLine.createdAt ?? new Date()).time}`,
+	// );
+	// printer.println(`สินค้า: ${transactionLine.products?.productName}`);
+	printer.println("------------------------------------------");
+}
+
+/**
+ * print all transaction lines in a group
+ * @param transactionGroupID
+ * @returns
+ */
+export async function printTransactionGroupDB(
+	transactionGroupID: string,
+): Promise<
+	| { result: "print done" }
+	| { result: "print fail"; error: { message: string } }
+> {
+	const transactionGroup = await db.query.transactionGroups.findFirst({
+		where: { transactionGroupId: transactionGroupID },
+	});
+	if (!transactionGroup) {
+		throw Error("Transaction group not found");
+	}
+	const farmer = await db.query.farmers.findFirst({
+		where: { farmerId: transactionGroup.farmerId as string },
+	});
+	const transactionLines = await db.query.transactionLines.findMany({
+		where: { transactionGroupId: transactionGroupID },
+		orderBy: { transactionLineNo: "asc" },
+		with: {
+			employees: true,
+			products: true,
+		},
 	});
 
-	printer.println("ทรัพย์ทวี");
+	printer.setPrinterDriver(printer);
+	printer.setCharacterSet("TIS18_THAI");
+	for (const transactionLine of transactionLines) {
+		const {
+			summaryCalculateText,
+			farmerAmountText,
+			employeeAmountText,
+			farmerCalculateTransportationFeeText,
+			farmerAmountTransportationFeeText,
+			farmerAllTransportationFeeText,
+			employeeCalculateTransportationFeeText,
+			employeeAmountTransportationFeeText,
+			employeeAllTransportationFeeText,
+		} = summaryTransactionText(transactionLine);
+		console.log("เวลา DB", transactionLine.createdAt);
+		//header
+		// printTransactionHeader();
+		printer.println(`ชื่อ: ${farmer?.displayName}`);
+		printer.println(
+			`วันที่และเวลา: ${formatDateThai(transactionLine.createdAt ?? new Date()).dateThai} ${formatDateThai(transactionLine.createdAt ?? new Date()).time}`,
+		);
+		printer.println(`สินค้า: ${transactionLine.products?.productName}`);
+		printer.println("------------------------------------------");
+		//header
+		printer.setTextSize(1, 1);
+		printer.println(summaryCalculateText);
+		printer.println("");
+		printer.println("");
+		if (transactionLine.isSplit !== "none") {
+			if (!transactionLine.isTransportationFee) {
+				printer.println(farmerAmountText);
+				printer.println("");
+				printer.setTextSize(0, 0);
+				printer.println(employeeAmountText);
+			} else if (transactionLine.isTransportationFee) {
+				printer.println(farmerCalculateTransportationFeeText);
+				printer.println(
+					`${" ".repeat(13)}${farmerAmountTransportationFeeText}`,
+				);
+				printer.println("");
+				printer.setTextSize(0, 0);
+				printer.println(employeeAllTransportationFeeText);
+			}
+			printer.println("");
+			printer.println(`คนตัด: ${transactionLine.employees?.displayName}`);
+		}
+		printer.partialCut();
+		// if (transactionLine.isSplit !== "none") {
+		// 	printer.println("ทรัพย์ทวี");
+		// 	printer.println("โทร: 089-474-0467");
+		// 	printer.println("เปิดทุกวัน 7.00 - 17.00 น.");
+		// 	printer.println("--------------");
+		// 	printer.println(`ชื่อ: ${farmer?.displayName}`);
+		// 	printer.println(
+		// 		`ใบเสร็จวันที่และเวลา: ${formatDateThai(transactionLine.createdAt ?? new Date()).dateThai} ${formatDateThai(transactionLine.createdAt ?? new Date()).time}`,
+		// 	);
+		// 	printer.println(`สินค้า: ${transactionLine.products?.productName}`);
+		// 	printer.println("--------------");
+		// 	//header
+		// 	printer.setTextSize(1, 1);
+		// 	printer.println(summaryCalculateText);
+		// 	printer.println(summaryTotalAmountText);
+		// 	printer.println("");
+		// 	printer.println(employeeAmountText);
+		// 	printer.println("");
+		// 	printer.println(`คนตัด: ${transactionLine.employees?.displayName}`);
+		// 	printer.cut();
+		// }
+	}
+
 	try {
 		let execute = await printer.execute();
 		return { result: "print done" };
 	} catch (e) {
-		return { result: "print fail" };
+		return {
+			result: "print fail",
+			error: { message: e instanceof Error ? e.message : String(e) },
+		};
 	}
 }

@@ -6,17 +6,19 @@ import {
 	CardTitle,
 } from "../ui/card";
 
-export default function ProductCard({ productData }: {
+export default function ProductCard({
+	productData,
+}: {
 	productData: {
 		productName: string;
 		defaultSplitType: "percentage" | "per_kg";
 		createdAt: Date | null;
 		updatedAt: Date | null;
 		productId: string;
-	}
+	};
 }) {
 	return (
-		<Card>
+		<Card className="min-w-[380px] md:min-w-[660px]">
 			<CardHeader>
 				<CardTitle>{productData.productName}</CardTitle>
 			</CardHeader>

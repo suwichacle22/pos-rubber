@@ -41,7 +41,7 @@ export function ProductForm() {
 				form.handleSubmit();
 			}}
 		>
-			<Card>
+			<Card className="min-w-[380px] md:min-w-[660px]">
 				<CardHeader>
 					<CardTitle>เพิ่มสินค้า</CardTitle>
 				</CardHeader>

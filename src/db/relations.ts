@@ -12,6 +12,7 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.farmers.farmerId,
 		}),
 		splitDefaults: r.many.splitDefaults(),
+		transactionLines: r.many.transactionLines(),
 	},
 	products: {
 		productPrices: r.many.productPrices(),
@@ -49,6 +50,10 @@ export const relations = defineRelations(schema, (r) => ({
 		products: r.one.products({
 			from: r.transactionLines.productId,
 			to: r.products.productId,
+		}),
+		employees: r.one.employees({
+			from: r.transactionLines.employeeId,
+			to: r.employees.employeeId,
 		}),
 	},
 }));

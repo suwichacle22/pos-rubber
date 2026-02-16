@@ -59,9 +59,9 @@ export const TransactionLine = withForm({
 						/>
 						<TransactionLineVehicle form={form} index={index} />
 						<TransactionLineWeight form={form} index={index} />
-						{/* <TransactionLineSplit form={form} index={index} /> */}
+						<TransactionLineSplit form={form} index={index} />
 						<TransactionLineTransportFee form={form} index={index} />
-						{/* <TransactionLineHarvestRate form={form} index={index} /> */}
+						<TransactionLineHarvestRate form={form} index={index} />
 					</FieldGroup>
 				</CardContent>
 			</Card>

@@ -1,4 +1,4 @@
-import { transactionLines } from "@/db/schema";
+import { transactionGroups, transactionLines } from "@/db/schema";
 import { formOptions } from "@tanstack/react-form";
 import { z } from "zod";
 
@@ -90,6 +90,10 @@ export const transactionLineSchema = z.object({
 		.string()
 		.nullable()
 		.transform((val) => (val === "" || !val ? null : val)),
+	transportationFeeAmount: z
+		.string()
+		.nullable()
+		.transform((val) => (val === "" || !val ? null : val)),
 	transportationFeeFarmerAmount: z
 		.string()
 		.nullable()
@@ -149,6 +153,7 @@ export const transactionLinesDefaultForm = () => {
 		employeeAmount: "",
 		isTransportationFee: false,
 		transportationFee: "",
+		transportationFeeAmount: "",
 		transportationFeeFarmerAmount: "",
 		transportationFeeEmployeeAmount: "",
 		farmerPaidType: "cash",
@@ -183,7 +188,42 @@ export type TransactionNewLineType = z.infer<
 	typeof transactionLinesNewFormSchema
 >;
 
-export type TransactionLineDBSchema = typeof transactionLines.$inferInsert;
+export type TransactionGroupDBType = typeof transactionGroups.$inferSelect;
+export type TransactionLineDBType = typeof transactionLines.$inferSelect;
+export type TransactionGroupLinesType = TransactionGroupDBType & {
+	TransactionLines: TransactionLineDBType[];
+};
+
+export type TransactionLinesType = {
+	transactionLinesId: string;
+	transactionLineNo: number;
+	employeeId: string;
+	productId: string;
+	isVehicle: boolean;
+	carLicense: string;
+	weightVehicleIn: string;
+	weightVehicleOut: string;
+	weight: string;
+	price: string;
+	totalAmount: string;
+	isSplit: string;
+	farmerRatio: string;
+	employeeRatio: string;
+	farmerAmount: string;
+	employeeAmount: string;
+	isTransportationFee: boolean;
+	transportationFee: string;
+	transportationFeeAmount: string;
+	transportationFeeFarmerAmount: string;
+	transportationFeeEmployeeAmount: string;
+	farmerPaidType: string;
+	employeePaidType: string;
+	isHarvestRate: boolean;
+	harvestRate: string;
+	promotionRate: string;
+	promotionTo: string;
+	promotionAmount: string;
+};
 
 export const addProductSchema = z.object({
 	productName: z

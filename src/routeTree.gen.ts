@@ -13,7 +13,8 @@ import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as FarmerRouteImport } from './routes/farmer'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TransactionNewRouteImport } from './routes/transaction/new'
+import { Route as TransactionPalmRouteImport } from './routes/transaction/palm'
+import { Route as TransactionNormalRouteImport } from './routes/transaction/normal'
 import { Route as TransactionGroupIdRouteImport } from './routes/transaction/$groupId'
 
 const TransactionsRoute = TransactionsRouteImport.update({
@@ -36,9 +37,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TransactionNewRoute = TransactionNewRouteImport.update({
-  id: '/transaction/new',
-  path: '/transaction/new',
+const TransactionPalmRoute = TransactionPalmRouteImport.update({
+  id: '/transaction/palm',
+  path: '/transaction/palm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransactionNormalRoute = TransactionNormalRouteImport.update({
+  id: '/transaction/normal',
+  path: '/transaction/normal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TransactionGroupIdRoute = TransactionGroupIdRouteImport.update({
@@ -53,7 +59,8 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRoute
   '/transactions': typeof TransactionsRoute
   '/transaction/$groupId': typeof TransactionGroupIdRoute
-  '/transaction/new': typeof TransactionNewRoute
+  '/transaction/normal': typeof TransactionNormalRoute
+  '/transaction/palm': typeof TransactionPalmRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +68,8 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/transactions': typeof TransactionsRoute
   '/transaction/$groupId': typeof TransactionGroupIdRoute
-  '/transaction/new': typeof TransactionNewRoute
+  '/transaction/normal': typeof TransactionNormalRoute
+  '/transaction/palm': typeof TransactionPalmRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,7 +78,8 @@ export interface FileRoutesById {
   '/products': typeof ProductsRoute
   '/transactions': typeof TransactionsRoute
   '/transaction/$groupId': typeof TransactionGroupIdRoute
-  '/transaction/new': typeof TransactionNewRoute
+  '/transaction/normal': typeof TransactionNormalRoute
+  '/transaction/palm': typeof TransactionPalmRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,7 +89,8 @@ export interface FileRouteTypes {
     | '/products'
     | '/transactions'
     | '/transaction/$groupId'
-    | '/transaction/new'
+    | '/transaction/normal'
+    | '/transaction/palm'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -88,7 +98,8 @@ export interface FileRouteTypes {
     | '/products'
     | '/transactions'
     | '/transaction/$groupId'
-    | '/transaction/new'
+    | '/transaction/normal'
+    | '/transaction/palm'
   id:
     | '__root__'
     | '/'
@@ -96,7 +107,8 @@ export interface FileRouteTypes {
     | '/products'
     | '/transactions'
     | '/transaction/$groupId'
-    | '/transaction/new'
+    | '/transaction/normal'
+    | '/transaction/palm'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -105,7 +117,8 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRoute
   TransactionsRoute: typeof TransactionsRoute
   TransactionGroupIdRoute: typeof TransactionGroupIdRoute
-  TransactionNewRoute: typeof TransactionNewRoute
+  TransactionNormalRoute: typeof TransactionNormalRoute
+  TransactionPalmRoute: typeof TransactionPalmRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,11 +151,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/transaction/new': {
-      id: '/transaction/new'
-      path: '/transaction/new'
-      fullPath: '/transaction/new'
-      preLoaderRoute: typeof TransactionNewRouteImport
+    '/transaction/palm': {
+      id: '/transaction/palm'
+      path: '/transaction/palm'
+      fullPath: '/transaction/palm'
+      preLoaderRoute: typeof TransactionPalmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transaction/normal': {
+      id: '/transaction/normal'
+      path: '/transaction/normal'
+      fullPath: '/transaction/normal'
+      preLoaderRoute: typeof TransactionNormalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/transaction/$groupId': {
@@ -161,7 +181,8 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRoute,
   TransactionsRoute: TransactionsRoute,
   TransactionGroupIdRoute: TransactionGroupIdRoute,
-  TransactionNewRoute: TransactionNewRoute,
+  TransactionNormalRoute: TransactionNormalRoute,
+  TransactionPalmRoute: TransactionPalmRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

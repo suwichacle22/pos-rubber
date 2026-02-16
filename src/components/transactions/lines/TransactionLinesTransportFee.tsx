@@ -60,6 +60,7 @@ export const TransactionLineTransportFee = withForm({
 											onChangeDebounceMs: 300,
 											onChange: ({ value }) => {
 												const {
+													transportationFeeAmount,
 													farmerTransportationFeeAmount,
 													employeeTransportationFeeAmount,
 												} = calculateTransportationFeeAmount(
@@ -67,9 +68,16 @@ export const TransactionLineTransportFee = withForm({
 														`transactionLines[${index}].farmerAmount`,
 													),
 													form.getFieldValue(
+														`transactionLines[${index}].employeeAmount`,
+													),
+													form.getFieldValue(
 														`transactionLines[${index}].weight`,
 													),
 													value,
+												);
+												form.setFieldValue(
+													`transactionLines[${index}].transportationFeeAmount`,
+													transportationFeeAmount,
 												);
 												form.setFieldValue(
 													`transactionLines[${index}].transportationFeeFarmerAmount`,
