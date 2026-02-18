@@ -23,6 +23,8 @@ import { calculateTransactionTotalNetAmount } from "@/utils/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
 import TransactionSummary from "./group/TransactionSummary";
+import { TransactionPalmGroup } from "./group/TransactionPalmGroup";
+import { productIds } from "@/config";
 
 type FormMeta = {
 	submitAction: "SaveDraft" | "Submit" | null;
@@ -152,6 +154,9 @@ export function TransactionMainFormNew() {
 							);
 						}}
 					</form.AppField>
+					{LinesData.some(
+						(line) => line.productId === productIds.palm,
+					) && <TransactionPalmGroup form={form} />}
 					{LinesData.length > 1 && <TransactionSummary lines={LinesData} />}
 					<div className="grid grid-cols-2 gap-2 h-[100px] justify-center items-center">
 						<form.AppForm>

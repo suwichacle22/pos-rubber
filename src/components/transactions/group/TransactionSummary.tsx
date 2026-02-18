@@ -1,4 +1,5 @@
 import type { TransactionLinesType } from "@/utils/transaction.schema";
+import { productIds } from "@/config";
 import {
 	Card,
 	CardHeader,
@@ -17,6 +18,21 @@ export default function TransactionSummary({
 }) {
 	const { data: productsData } = useGetProducts();
 	const { data: employeesData } = useGetEmployees();
+
+	const palmLines = lines.filter((line) => line.productId === productIds.palm);
+	const totalHarvestRate = palmLines.reduce(
+		(acc, line) => acc + parseFloat(line.employeeAmount || "0"),
+		0,
+	);
+	const palmTotalAmount = palmLines.reduce(
+		(acc, line) => acc + parseFloat(line.totalAmount || "0"),
+		0,
+	);
+	const totalPromotionAmount = palmLines.reduce(
+		(acc, line) => acc + parseFloat(line.promotionAmount || "0"),
+		0,
+	);
+	const remaining = palmTotalAmount - totalHarvestRate;
 	return (
 		<Card>
 			<CardHeader>
@@ -39,7 +55,7 @@ export default function TransactionSummary({
 									<CardAction>รายการที่ {index + 1}</CardAction>
 								</CardHeader>
 								<CardContent>
-									<h2 className="scroll-m-20 text-xl font-semibold tracking-tight">
+									<h2 className="">
 										สินค้า:{" "}
 										{
 											productsData?.find(
@@ -47,9 +63,7 @@ export default function TransactionSummary({
 											)?.productName
 										}
 									</h2>
-									<h2 className="scroll-m-20 text-xl font-semibold tracking-tight">
-										{summaryCalculateText}
-									</h2>
+									<h2 className="">{summaryCalculateText}</h2>
 								</CardContent>
 							</Card>
 						</div>
@@ -69,6 +83,13 @@ export default function TransactionSummary({
 						0,
 					)}
 				</p>
+				{lines.some((line) => line.productId === productIds.palm) && (
+					<>
+						<p>ค่าตัดปาล์ม: {totalHarvestRate.toLocaleString()}</p>
+						<p>เหลือ: {remaining.toLocaleString()}</p>
+						<p>ค่านำส่ง: {totalPromotionAmount.toLocaleString()}</p>
+					</>
+				)}
 			</CardFooter>
 		</Card>
 	);

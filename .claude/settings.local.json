@@ -3,7 +3,10 @@
     "allow": [
       "WebFetch(domain:ui.shadcn.com)",
       "WebFetch(domain:tanstack.com)",
-      "WebFetch(domain:leonardomontini.dev)"
+      "WebFetch(domain:leonardomontini.dev)",
+      "WebFetch(domain:docs.convex.dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:stack.convex.dev)"
     ]
   }
 }

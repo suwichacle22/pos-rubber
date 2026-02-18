@@ -175,6 +175,16 @@ export const transactionFormOptions = formOptions({
 			status: "pending",
 		},
 		transactionLines: [transactionLinesDefaultForm()],
+		transactionPalmGroup: {
+			isHarvestRate: false,
+			employeeId: "",
+			harvestRate: "",
+			promotionRate: "",
+			promotionTo: "",
+			promotionAmount: "",
+			farmerPaidType: "cash",
+			employeePaidType: "cash",
+		},
 	},
 });
 

@@ -36,7 +36,7 @@ export const TransactionGroup = withForm({
 			}
 		};
 		return (
-			<Card>
+			<Card className="">
 				<CardHeader>
 					<CardTitle>หัวบิล</CardTitle>
 					<CardAction>{isLoadingFarmers && <Spinner />}</CardAction>

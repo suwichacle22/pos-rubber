@@ -52,7 +52,7 @@ export function ComboBoxWithCreateField({
 					...selectData,
 					{
 						value: `create:${lowered}`,
-						label: `Create "${trimmed}"`,
+						label: `สร้าง "${trimmed}"`,
 						creatable: trimmed,
 					},
 				]

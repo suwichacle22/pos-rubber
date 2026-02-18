@@ -151,6 +151,12 @@ export function formatRatio(value: string) {
 	return ratio.toFixed(0).toString();
 }
 
+export function formatRatioPalm(value: string) {
+	const num = parseFloat(value);
+	const ratio = num * 1000;
+	return ratio.toFixed(0).toString();
+}
+
 export function summaryTransactionText(data: TransactionLineDBType) {
 	const {
 		weight,
@@ -163,6 +169,8 @@ export function summaryTransactionText(data: TransactionLineDBType) {
 		employeeRatio,
 		transportationFeeEmployeeAmount,
 		transportationFeeAmount,
+		harvestRate,
+		promotionRate,
 	} = data;
 	const formatWeight = formatNumber(weight);
 	const formatPrice = formatNumber(price);
@@ -178,6 +186,7 @@ export function summaryTransactionText(data: TransactionLineDBType) {
 	const formatTransportationFeeEmployeeAmount = formatNumber(
 		transportationFeeEmployeeAmount,
 	);
+	const formatHarvestRate = formatRatioPalm(harvestRate);
 
 	const summaryCalculateText = `${formatWeight} x ${formatPrice} = ${formatTotalAmount}`;
 	const farmerAmountText = `${formatFarmerRatio}:  ${formatFarmerAmount}`;
@@ -188,6 +197,7 @@ export function summaryTransactionText(data: TransactionLineDBType) {
 	const employeeCalculateTransportationFeeText = `${formatEmployeeRatio}: ${formatEmployeeAmount} - ${formatTransportationFeeAmount} `;
 	const employeeAmountTransportationFeeText = `= ${formatTransportationFeeEmployeeAmount}`;
 	const employeeAllTransportationFeeText = `${employeeCalculateTransportationFeeText} ${employeeAmountTransportationFeeText}`;
+	const harvestRateText = `ตัน ${formatHarvestRate}`;
 	return {
 		summaryCalculateText,
 		farmerAmountText,
@@ -198,6 +208,7 @@ export function summaryTransactionText(data: TransactionLineDBType) {
 		employeeCalculateTransportationFeeText,
 		employeeAmountTransportationFeeText,
 		employeeAllTransportationFeeText,
+		harvestRateText,
 	};
 }
 

@@ -5,12 +5,10 @@ import { transactionFormOptions } from "@/utils/transaction.schema";
 import { toast } from "sonner";
 import { useStore } from "@tanstack/react-store";
 
-export const TransactionLinesEmployeeId = withForm({
+export const TransactionGroupEmployeeId = withForm({
 	...transactionFormOptions,
-	props: {
-		index: 0,
-	},
-	render: function Render({ form, index }) {
+	props: { palmIndexes: [0] },
+	render: function Render({ form, palmIndexes }) {
 		const farmerId = useStore(
 			form.store,
 			(state) => state.values.transactionGroup.farmerId,
@@ -37,14 +35,17 @@ export const TransactionLinesEmployeeId = withForm({
 		return (
 			<FieldGroup>
 				<form.AppField
-					name={`transactionLines[${index}].employeeId`}
+					name="transactionPalmGroup.employeeId"
 					validators={{
+						onChange: ({ value }) => {
+							for (const i of palmIndexes) {
+								form.setFieldValue(`transactionLines[${i}].employeeId`, value);
+							}
+						},
 						onSubmit: ({ value }) => {
 							if (
-								(!value &&
-									form.getFieldValue(`transactionLines[${index}].isSplit`) !==
-										"none") ||
-								form.getFieldValue("transactionPalmGroup.isHarvestRate")
+								!value &&
+								form.getFieldValue(`transactionPalmGroup.isHarvestRate`)
 							) {
 								return "กรุณาใส่ชื่อลูกค้า";
 							}
