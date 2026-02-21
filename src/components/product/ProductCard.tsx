@@ -1,3 +1,4 @@
+﻿import type { Id } from "convex/_generated/dataModel";
 import {
 	Card,
 	CardContent,
@@ -5,16 +6,17 @@ import {
 	CardHeader,
 	CardTitle,
 } from "../ui/card";
+import { ProductPriceForm } from "./ProductPriceForm";
 
 export default function ProductCard({
 	productData,
 }: {
 	productData: {
+		_id: Id<"products">;
 		productName: string;
-		defaultSplitType: "percentage" | "per_kg";
-		createdAt: Date | null;
-		updatedAt: Date | null;
-		productId: string;
+		_creationTime: number;
+		latestPrice: number | null;
+		latestPriceAt: number | null;
 	};
 }) {
 	return (
@@ -22,12 +24,24 @@ export default function ProductCard({
 			<CardHeader>
 				<CardTitle>{productData.productName}</CardTitle>
 			</CardHeader>
-			<CardContent>
-				<p>{productData.defaultSplitType}</p>
+			<CardContent className="space-y-2">
+				<p>
+					Latest price:{" "}
+					{productData.latestPrice === null
+						? "No price yet"
+						: productData.latestPrice.toLocaleString()}
+				</p>
+				{productData.latestPriceAt && (
+					<p className="text-sm text-muted-foreground">
+						Last price update: {new Date(productData.latestPriceAt).toLocaleString()}
+					</p>
+				)}
+				<ProductPriceForm productId={productData._id} />
 			</CardContent>
 			<CardFooter>
-				<p>{productData.createdAt?.toLocaleDateString()}</p>
-				<p>{productData.updatedAt?.toLocaleDateString()}</p>
+				<p className="text-sm text-muted-foreground">
+					Created at: {new Date(productData._creationTime).toLocaleDateString()}
+				</p>
 			</CardFooter>
 		</Card>
 	);

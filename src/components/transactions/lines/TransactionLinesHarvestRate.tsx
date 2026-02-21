@@ -12,10 +12,6 @@ import {
 } from "@/utils/utils";
 import { TransactionLinesEmployeeId } from "./TransactionLinesEmployeeId";
 
-// harvestRate: string;
-// promotionRate: string;
-// promotionTo: string;
-// promotionAmount: string;
 export const TransactionLineHarvestRate = withForm({
 	...transactionFormOptions,
 	props: { index: 0 },

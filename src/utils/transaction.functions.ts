@@ -1,13 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
-	addProductSchema,
 	addFarmerSchema,
 	addEmployeeSchema,
 	transactionGroupSchemaNew,
 	transactionLinesNewFormSchema,
 } from "./transaction.schema";
 import {
-	addProductDB,
 	getProductsDB,
 	addFarmerDB,
 	getFarmersFormDB,
@@ -21,12 +19,6 @@ import {
 	printTransactionGroupDB,
 } from "./transactions.server";
 import z from "zod";
-
-export const addProduct = createServerFn({ method: "POST" })
-	.inputValidator(addProductSchema)
-	.handler(async ({ data }) => {
-		return await addProductDB(data);
-	});
 
 export const getProducts = createServerFn({ method: "GET" }).handler(
 	async () => {

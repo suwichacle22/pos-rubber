@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	addProduct,
 	getProducts,
 	addFarmer,
 	getFarmersForm,
@@ -12,16 +11,6 @@ import {
 	addTransactionLinesNew,
 	printTransactionGroup,
 } from "./transaction.functions";
-
-export function useAddProduct() {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: addProduct,
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["products"] });
-		},
-	});
-}
 
 export function useGetProducts() {
 	return useQuery({

@@ -6,7 +6,6 @@ import {
 	transactionGroups,
 	transactionLines,
 } from "@/db/schema";
-import type { ProductSplitTypeEnum, TransactionStatusEnum } from "./type";
 import { asc, eq } from "drizzle-orm";
 import type {
 	TransactionGroupNewType,
@@ -38,19 +37,6 @@ export interface PrintSplitSectionParams {
 	employeeAllTransportationFeeText: string;
 	employeeDisplayName: string | null | undefined;
 	isTransportationFee: boolean;
-}
-
-export async function addProductDB(data: {
-	productName: string;
-	defaultSplitType: ProductSplitTypeEnum;
-}) {
-	return await db
-		.insert(products)
-		.values({
-			productName: data.productName,
-			defaultSplitType: data.defaultSplitType,
-		})
-		.returning();
 }
 
 export async function getProductsDB() {

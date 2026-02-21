@@ -171,7 +171,7 @@ export const transactionFormOptions = formOptions({
 		transactionGroup: {
 			transactionGroupId: "",
 			groupName: "",
-			farmerId: "", //remvoe after test
+			farmerId: "",
 			status: "pending",
 		},
 		transactionLines: [transactionLinesDefaultForm()],
@@ -278,3 +278,11 @@ export const addEmployeeSchema = z.object({
 });
 
 export type AddEmployeeType = z.infer<typeof addEmployeeSchema>;
+
+/** Schema for adding employee when farmerId is provided by context (e.g. inside farmer card) */
+export const addEmployeeInlineSchema = z.object({
+	displayName: z
+		.string("โปรดใส่ชื่อ")
+		.min(1)
+		.transform((val) => val.trim()),
+});

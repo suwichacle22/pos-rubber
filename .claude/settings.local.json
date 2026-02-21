@@ -6,7 +6,8 @@
       "WebFetch(domain:leonardomontini.dev)",
       "WebFetch(domain:docs.convex.dev)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:stack.convex.dev)"
+      "WebFetch(domain:stack.convex.dev)",
+      "Bash(find:*)"
     ]
   }
 }

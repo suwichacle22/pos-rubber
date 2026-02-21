@@ -9,41 +9,42 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import type { FieldOrientation } from "@/utils/type";
 import { useFieldContext } from "../formContext";
-import type { SelectData } from "../formContext";
 import { useEffect, useState } from "react";
 import { PlusIcon } from "lucide-react";
+import { Id } from "convex/_generated/dataModel";
 
 interface ItemsCreatable {
-	value: string;
-	label: string;
+	value: Id<any> | string;
+	label: string | undefined;
 	creatable?: string;
 }
 
-export function ComboBoxWithCreateField({
+export function ComboBoxWithCreateField<TValue extends string = string>({
 	label,
 	handleCreate,
-	selectData = [{ label: "ไม่มีข้อมูล", value: "" }],
+	selectData = [{ label: "ไม่มีข้อมูล", value: "" }] as ItemsCreatable[],
 	placeholder = "โปรดเลือก",
 	emptyMessage = "ไม่มีข้อมูล",
 	orientation = "vertical",
 }: {
 	label: string;
-	handleCreate: (
-		label: string,
-	) => Promise<{ newValue: string; newLabel: string }>;
-	selectData: SelectData[];
+	handleCreate: (label: string) => Promise<{
+		newValue: Id<any> | string;
+		newLabel: string | undefined;
+	}>;
+	selectData: ItemsCreatable[];
 	placeholder?: string;
 	emptyMessage?: string;
 	orientation?: FieldOrientation;
 }) {
-	const field = useFieldContext<string>();
+	const field = useFieldContext<TValue>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 	const [query, setQuery] = useState("");
 
 	const trimmed = query.trim();
 	const lowered = trimmed.toLocaleLowerCase();
 	const exactExists = selectData.some(
-		(p) => p.label.trim().toLocaleLowerCase() === lowered,
+		(p) => p.label?.trim().toLocaleLowerCase() === lowered,
 	);
 
 	const itemsForView: ItemsCreatable[] =
@@ -66,7 +67,7 @@ export function ComboBoxWithCreateField({
 	// Sync query when form loads with existing value (e.g. editing draft) - only when query is empty to avoid overwriting user typing
 	useEffect(() => {
 		if (query === "" && selectedItem) {
-			setQuery(selectedItem.label);
+			setQuery(selectedItem.label ?? "");
 		}
 	}, [selectedItem, query]);
 
@@ -79,7 +80,7 @@ export function ComboBoxWithCreateField({
 					inputValue={query}
 					onInputValueChange={setQuery}
 					value={selectedItem ?? null}
-					itemToStringLabel={(item: ItemsCreatable) => item.label}
+					itemToStringLabel={(item: ItemsCreatable) => item.label ?? ""}
 					itemToStringValue={(item: ItemsCreatable) => item.value}
 					isItemEqualToValue={(a, b) => a?.value === b?.value}
 					onValueChange={async (items: unknown) => {
@@ -88,12 +89,12 @@ export function ComboBoxWithCreateField({
 						if (selectedItems?.creatable) {
 							// Update form first to avoid race with refetch overwriting value
 							const result = await handleCreate(selectedItems.creatable);
-							field.handleChange(result.newValue);
-							setQuery(result.newLabel);
+							field.handleChange(result.newValue as TValue);
+							setQuery(result.newLabel ?? "");
 							return;
 						}
-						field.handleChange(selectedItems.value);
-						setQuery(selectedItems.label);
+						field.handleChange(selectedItems.value as TValue);
+						setQuery(selectedItems.label ?? "");
 					}}
 				>
 					<ComboboxInput placeholder={placeholder} />

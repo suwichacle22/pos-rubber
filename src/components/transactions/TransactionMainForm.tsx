@@ -6,7 +6,7 @@ import {
 	transactionLinesNewFormSchema,
 } from "@/utils/transaction.schema";
 import { useAppForm } from "../form/formContext";
-import { TransactionGroup } from "./group/TransactionGroupNew";
+import { TransactionGroup } from "./group/TransactionGroup";
 import { SubmitButton } from "../form/component/SubmitButton";
 import { toast } from "sonner";
 import { TransactionLine } from "./lines/TransactionLinesNew";
@@ -24,7 +24,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
 import TransactionSummary from "./group/TransactionSummary";
 import { TransactionPalmGroup } from "./group/TransactionPalmGroup";
-import { productIds } from "@/config";
+import { api } from "convex/_generated/api";
+import { useMutation, useQuery } from "convex/react";
 
 type FormMeta = {
 	submitAction: "SaveDraft" | "Submit" | null;
@@ -34,81 +35,82 @@ const defaultMeta: FormMeta = {
 	submitAction: null,
 };
 
-export function TransactionMainFormNew() {
+export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 	const navigate = useNavigate();
-	const { data: productsFormData = [] } = useGetProductsForm();
-	const addTransactionGroupNew = useAddTransactionGroupNew();
-	const addTransactionLinesNew = useAddTransactionLinesNew();
-	const printTransactionGroup = usePrintTransactionGroup();
+	const productsFormData = useQuery(api.transactions.queries.getProductForm);
+	const palmProductIds = useQuery(api.transactions.queries.getProductPalmIds);
+	const addTrasactionLine = useMutation(
+		api.transactions.mutations.addTransactionLine,
+	);
 	const form = useAppForm({
 		...transactionFormOptions,
 		onSubmitMeta: defaultMeta,
-		onSubmit: async ({ value, meta }) => {
-			if (meta.submitAction === "SaveDraft") {
-				const group = transactionGroupSchemaNew.parse(value.transactionGroup);
-				group.status = "pending";
-				const [groupData] = await addTransactionGroupNew.mutateAsync({
-					data: group,
-				});
-				//line
-				const initLines = value.transactionLines;
-				const lineswithGroupID = initLines.map((line, index) => {
-					return {
-						...line,
-						transactionGroupId: groupData.transactionGroupId,
-						transactionLineNo: index + 1,
-						totalNetAmount: calculateTransactionTotalNetAmount(
-							line.totalAmount,
-							line.promotionAmount,
-						),
-					};
-				});
-				const lines = transactionLinesNewFormSchema.parse(lineswithGroupID);
-				await addTransactionLinesNew.mutateAsync({
-					data: lines,
-				});
+		// onSubmit: async ({ value, meta }) => {
+		// 	if (meta.submitAction === "SaveDraft") {
+		// 		const group = transactionGroupSchemaNew.parse(value.transactionGroup);
+		// 		group.status = "pending";
+		// 		const [groupData] = await addTransactionGroupNew.mutateAsync({
+		// 			data: group,
+		// 		});
+		// 		//line
+		// 		const initLines = value.transactionLines;
+		// 		const lineswithGroupID = initLines.map((line, index) => {
+		// 			return {
+		// 				...line,
+		// 				transactionGroupId: groupData.transactionGroupId,
+		// 				transactionLineNo: index + 1,
+		// 				totalNetAmount: calculateTransactionTotalNetAmount(
+		// 					line.totalAmount,
+		// 					line.promotionAmount,
+		// 				),
+		// 			};
+		// 		});
+		// 		const lines = transactionLinesNewFormSchema.parse(lineswithGroupID);
+		// 		await addTransactionLinesNew.mutateAsync({
+		// 			data: lines,
+		// 		});
 
-				form.reset();
-				navigate({ to: `/transaction/${groupData.transactionGroupId}` });
-			}
-			if (meta.submitAction === "Submit") {
-				const group = transactionGroupSchemaNew.parse(value.transactionGroup);
-				group.status = "submitted";
-				const [groupData] = await addTransactionGroupNew.mutateAsync({
-					data: group,
-				});
+		// 		form.reset();
+		// 		navigate({ to: `/transaction/${groupData.transactionGroupId}` });
+		// 	}
+		// 	if (meta.submitAction === "Submit") {
+		// 		const group = transactionGroupSchemaNew.parse(value.transactionGroup);
+		// 		group.status = "submitted";
+		// 		const [groupData] = await addTransactionGroupNew.mutateAsync({
+		// 			data: group,
+		// 		});
 
-				//line
-				const initLines = value.transactionLines;
-				const lineswithGroupID = initLines.map((line, index) => {
-					return {
-						...line,
-						transactionGroupId: groupData.transactionGroupId,
-						transactionLineNo: index + 1,
-						totalNetAmount: calculateTransactionTotalNetAmount(
-							line.totalAmount,
-							line.promotionAmount,
-						),
-					};
-				});
-				const lines = transactionLinesNewFormSchema.parse(lineswithGroupID);
-				await addTransactionLinesNew.mutateAsync({
-					data: lines,
-				});
+		// 		//line
+		// 		const initLines = value.transactionLines;
+		// 		const lineswithGroupID = initLines.map((line, index) => {
+		// 			return {
+		// 				...line,
+		// 				transactionGroupId: groupData.transactionGroupId,
+		// 				transactionLineNo: index + 1,
+		// 				totalNetAmount: calculateTransactionTotalNetAmount(
+		// 					line.totalAmount,
+		// 					line.promotionAmount,
+		// 				),
+		// 			};
+		// 		});
+		// 		const lines = transactionLinesNewFormSchema.parse(lineswithGroupID);
+		// 		await addTransactionLinesNew.mutateAsync({
+		// 			data: lines,
+		// 		});
 
-				await printTransactionGroup.mutateAsync({
-					data: { transactionGroupID: groupData.transactionGroupId },
-				});
+		// 		await printTransactionGroup.mutateAsync({
+		// 			data: { transactionGroupID: groupData.transactionGroupId },
+		// 		});
 
-				form.reset();
-				navigate({ to: "/" });
-			}
+		// 		form.reset();
+		// 		navigate({ to: "/" });
+		// 	}
 
-			toast.success("สำเร็จ", {
-				description:
-					meta.submitAction === "SaveDraft" ? "บันทึกแบบร่างสำเร็จ" : "บันทึกสำเร็จ",
-			});
-		},
+		// 	toast.success("สำเร็จ", {
+		// 		description:
+		// 			meta.submitAction === "SaveDraft" ? "บันทึกแบบร่างสำเร็จ" : "บันทึกสำเร็จ",
+		// 	});
+		// },
 	});
 	const LinesData = useStore(
 		form.store,
@@ -136,7 +138,7 @@ export function TransactionMainFormNew() {
 												form={form}
 												index={index}
 												onDelete={(index) => field.removeValue(index)}
-												selectProductsData={productsFormData}
+												selectProductsData={productsFormData || []}
 											/>
 										);
 									})}
@@ -154,8 +156,8 @@ export function TransactionMainFormNew() {
 							);
 						}}
 					</form.AppField>
-					{LinesData.some(
-						(line) => line.productId === productIds.palm,
+					{LinesData.some((line) =>
+						palmProductIds?.some((product) => product._id === line.productId),
 					) && <TransactionPalmGroup form={form} />}
 					{LinesData.length > 1 && <TransactionSummary lines={LinesData} />}
 					<div className="grid grid-cols-2 gap-2 h-[100px] justify-center items-center">

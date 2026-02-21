@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { TrashIcon } from "lucide-react";
 import { TransactionLineTransportFee } from "./TransactionLinesTransportFee";
 import { TransactionLineHarvestRate } from "./TransactionLinesHarvestRate";
+import { useQuery } from "convex/react";
+import { api } from "convex/_generated/api";
 
 export const TransactionLine = withForm({
 	...transactionFormOptions,
@@ -24,6 +26,7 @@ export const TransactionLine = withForm({
 		onDelete: (index: number) => {},
 	},
 	render: function Render({ form, index, selectProductsData, onDelete }) {
+		const productPalmId = useQuery(api.transactions.queries.getProductPalmIds);
 		return (
 			<Card>
 				<CardHeader>
@@ -61,7 +64,18 @@ export const TransactionLine = withForm({
 						<TransactionLineWeight form={form} index={index} />
 						<TransactionLineSplit form={form} index={index} />
 						<TransactionLineTransportFee form={form} index={index} />
-						<TransactionLineHarvestRate form={form} index={index} />
+						<form.Subscribe
+							selector={(state) =>
+								state.values.transactionLines[index].productId
+							}
+							children={(productId) => {
+								return (
+									productPalmId?.some(
+										(product) => product._id === productId,
+									) && <TransactionLineHarvestRate form={form} index={index} />
+								);
+							}}
+						/>
 					</FieldGroup>
 				</CardContent>
 			</Card>

@@ -10,18 +10,25 @@ import {
 	calculateHarvestRateAmount,
 	calculatePromotionAmount,
 } from "@/utils/utils";
-import { productIds } from "@/config";
+import { api } from "convex/_generated/api";
+import type { Id } from "convex/_generated/dataModel";
+import { useQuery } from "convex/react";
 import { TransactionGroupEmployeeId } from "./TransactionGroupEmployeeId";
+import { config } from "@/utils/config";
 
-function getPalmLineIndices(lines: { productId: string }[]) {
+function getPalmLineIndices(
+	lines: { productId: string }[],
+	palmProductId: string,
+) {
 	return lines
-		.map((line, i) => (line.productId === productIds.palm ? i : -1))
+		.map((line, i) => (palmProductId === line.productId ? i : -1))
 		.filter((i) => i >= 0);
 }
 
 export const TransactionPalmGroup = withForm({
 	...transactionFormOptions,
 	render: function Render({ form }) {
+		const palmProductId = config.product.palmProductId;
 		const cardRef = useRef<HTMLDivElement>(null);
 		const spreadToPalmLines = (
 			field:
@@ -32,7 +39,7 @@ export const TransactionPalmGroup = withForm({
 			value: string | boolean,
 		) => {
 			const lines = form.getFieldValue("transactionLines") ?? [];
-			const indices = getPalmLineIndices(lines);
+			const indices = getPalmLineIndices(lines, palmProductId);
 			for (const i of indices) {
 				form.setFieldValue(`transactionLines[${i}].${field}`, value);
 			}
@@ -40,7 +47,7 @@ export const TransactionPalmGroup = withForm({
 
 		const spreadHarvestRate = (value: string) => {
 			const lines = form.getFieldValue("transactionLines") ?? [];
-			const indices = getPalmLineIndices(lines);
+			const indices = getPalmLineIndices(lines, palmProductId);
 			for (const i of indices) {
 				form.setFieldValue(`transactionLines[${i}].harvestRate`, value);
 				const { farmerAmount, employeeAmount } = calculateHarvestRateAmount(
@@ -58,7 +65,7 @@ export const TransactionPalmGroup = withForm({
 
 		const spreadPromotionRate = (value: string) => {
 			const lines = form.getFieldValue("transactionLines") ?? [];
-			const indices = getPalmLineIndices(lines);
+			const indices = getPalmLineIndices(lines, palmProductId);
 			for (const i of indices) {
 				form.setFieldValue(`transactionLines[${i}].promotionRate`, value);
 				const promotionAmount = calculatePromotionAmount(
@@ -86,10 +93,7 @@ export const TransactionPalmGroup = withForm({
 									onChange: ({ value }) => {
 										spreadToPalmLines("isHarvestRate", value);
 										if (!value) {
-											form.setFieldValue(
-												"transactionPalmGroup.employeeId",
-												"",
-											);
+											form.setFieldValue("transactionPalmGroup.employeeId", "");
 											form.setFieldValue(
 												"transactionPalmGroup.farmerPaidType",
 												"cash",
@@ -100,7 +104,7 @@ export const TransactionPalmGroup = withForm({
 											);
 											const lines =
 												form.getFieldValue("transactionLines") ?? [];
-											const indices = getPalmLineIndices(lines);
+											const indices = getPalmLineIndices(lines, palmProductId);
 											for (const i of indices) {
 												form.setFieldValue(
 													`transactionLines[${i}].harvestRate`,
@@ -150,6 +154,7 @@ export const TransactionPalmGroup = withForm({
 												form={form}
 												palmIndexes={getPalmLineIndices(
 													form.getFieldValue("transactionLines"),
+													palmProductId,
 												)}
 											/>
 											<form.AppField

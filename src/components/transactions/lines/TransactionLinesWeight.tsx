@@ -86,9 +86,13 @@ export const TransactionLineWeight = withForm({
 					/>
 				</div>
 				<form.Subscribe
-					selector={(state) => state.values.transactionLines[index].isSplit}
-					children={(isSplit) =>
-						isSplit === "none" && (
+					selector={(state) => [
+						state.values.transactionLines[index].isSplit,
+						state.values.transactionLines[index].isHarvestRate,
+					]}
+					children={([isSplit, isHarvestRate]) =>
+						isSplit === "none" &&
+						isHarvestRate === false && (
 							<FieldGroup>
 								<form.AppField
 									name={`transactionLines[${index}].farmerPaidType`}

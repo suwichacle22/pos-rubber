@@ -237,3 +237,9 @@ export const formatDateThai = (inputDate: Date) => {
 	const time = format(inputDate, "HH:mm");
 	return { dateThai, time };
 };
+
+export const formatDateThaiConvex = (inputDate: number): string => {
+	const date = new Date(inputDate);
+	const { dateThai, time } = formatDateThai(date);
+	return `${dateThai} ${time}`;
+};

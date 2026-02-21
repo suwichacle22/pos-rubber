@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { TransactionMainFormNew } from "@/components/transactions/TransactionMainForm";
 
 export const Route = createFileRoute("/transaction/$groupId")({
 	component: RouteComponent,
@@ -6,5 +7,9 @@ export const Route = createFileRoute("/transaction/$groupId")({
 
 function RouteComponent() {
 	const { groupId } = Route.useParams();
-	return <div>Hello {`/transaction/${groupId}`}!</div>;
+	return (
+		<div>
+			<TransactionMainFormNew groupId={groupId} />
+		</div>
+	);
 }
