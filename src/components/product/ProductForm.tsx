@@ -25,7 +25,7 @@ export function ProductForm() {
 			try {
 				await createProduct(parsed);
 				form.reset();
-				toast.success("Product created");
+				toast.success("เพิ่มสินค้าสำเร็จ");
 			} catch (error) {
 				toast.error(error instanceof Error ? error.message : String(error));
 			}
@@ -42,7 +42,7 @@ export function ProductForm() {
 		>
 			<Card className="min-w-[380px] md:min-w-[660px]">
 				<CardHeader>
-					<CardTitle>Add Product</CardTitle>
+					<CardTitle>เพิ่มสินค้า</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<FieldGroup>
@@ -50,8 +50,8 @@ export function ProductForm() {
 							name="productName"
 							children={(field) => (
 								<field.TextField
-									label="Product Name"
-									placeholder="Enter product name..."
+									label="ชื่อสินค้า"
+									placeholder="ใส่ชื่อสินค้า..."
 								/>
 							)}
 						/>

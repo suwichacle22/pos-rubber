@@ -24,7 +24,10 @@ export default function FarmerCard({
 			<CardHeader>
 				<CardTitle>{farmerData.displayName}</CardTitle>
 				<CardDescription>
-					{formatDateThaiConvex(farmerData._creationTime)}
+					{(() => {
+						const { dateThai, time } = formatDateThaiConvex(farmerData._creationTime);
+						return `${dateThai} ${time}`;
+					})()}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">

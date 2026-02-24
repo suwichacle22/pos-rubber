@@ -14,13 +14,9 @@ function RouteComponent() {
 		convexQuery(api.transactions.queries.listProductsWithLatestPrice),
 	);
 	return (
-		<div className="flex flex-col items-center justify-center gap-4">
-			<div className="flex flex-col items-center justify-center">
-				<ProductForm />
-			</div>
-			<div className="flex text-2xl font-bold justify-items-start items-start">
-				Products
-			</div>
+		<div className="flex flex-col gap-8 p-6">
+			<ProductForm />
+			<div className="text-2xl font-bold">สินค้า</div>
 			<div className="flex flex-col gap-4">
 				{products?.map((product) => (
 					<ProductCard key={product._id} productData={product} />

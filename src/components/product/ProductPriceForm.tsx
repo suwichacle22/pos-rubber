@@ -20,7 +20,7 @@ export function ProductPriceForm({ productId }: { productId: Id<"products"> }) {
 				productId,
 				price: Number(parsed.price),
 			});
-			toast.success("Price added");
+			toast.success("เพิ่มราคาสำเร็จ");
 			form.reset();
 		},
 	});
@@ -37,12 +37,12 @@ export function ProductPriceForm({ productId }: { productId: Id<"products"> }) {
 					<form.AppField
 						name="price"
 						children={(field) => (
-							<field.NumericField label="Price" placeholder="Enter price..." />
+							<field.NumericField label="ราคา" placeholder="ใส่ราคา..." />
 						)}
 					/>
 				</FieldGroup>
 				<form.AppForm>
-					<SubmitButton label="Add Price" />
+					<SubmitButton label="เพิ่มราคา" />
 				</form.AppForm>
 			</div>
 		</form>

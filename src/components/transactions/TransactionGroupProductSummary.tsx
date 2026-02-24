@@ -1,0 +1,71 @@
+import { api } from "convex/_generated/api";
+import { useQuery } from "convex/react";
+import { Id } from "convex/_generated/dataModel";
+
+export default function TransactionGroupProductSummary({
+	groupId,
+}: {
+	groupId: string;
+}) {
+	const lines = useQuery(api.transactions.queries.getTransactionLinesByGroupId, {
+		groupId: groupId as Id<"transactionGroups">,
+	});
+	const products = useQuery(api.transactions.queries.getProductForm);
+
+	if (lines === undefined || products === undefined) {
+		return <p className="text-xs text-muted-foreground">กำลังโหลด...</p>;
+	}
+
+	const getProductName = (productId: string) =>
+		products.find((p) => p.value === productId)?.label ?? "-";
+
+	const productGroups = new Map<
+		string,
+		{ productName: string; totalWeight: number; price: number; totalAmount: number }
+	>();
+
+	for (const line of lines) {
+		if (!line.productId) continue;
+		const name = getProductName(line.productId);
+		const existing = productGroups.get(line.productId) ?? {
+			productName: name,
+			totalWeight: 0,
+			price: 0,
+			totalAmount: 0,
+		};
+		existing.totalWeight += line.weight ?? 0;
+		existing.price = line.price ?? 0;
+		existing.totalAmount += line.totalAmount ?? 0;
+		productGroups.set(line.productId, existing);
+	}
+
+	if (productGroups.size === 0) {
+		return (
+			<p className="text-xs text-muted-foreground">ยังไม่มีรายการสินค้า</p>
+		);
+	}
+
+	let grandTotal = 0;
+	for (const agg of productGroups.values()) {
+		grandTotal += agg.totalAmount;
+	}
+
+	return (
+		<div className="flex flex-col gap-1">
+			{[...productGroups.entries()].map(([productId, agg]) => (
+				<div key={productId} className="flex justify-between text-sm">
+					<span className="text-muted-foreground">{agg.productName}</span>
+					<span>
+						{agg.totalWeight} x {agg.price} = {agg.totalAmount}
+					</span>
+				</div>
+			))}
+			{productGroups.size > 1 && (
+				<div className="flex justify-between text-sm font-semibold border-t pt-1 mt-1">
+					<span>รวม</span>
+					<span>{grandTotal}</span>
+				</div>
+			)}
+		</div>
+	);
+}

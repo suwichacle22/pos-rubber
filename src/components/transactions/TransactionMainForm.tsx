@@ -45,6 +45,11 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 	const navigate = useNavigate();
 	const productsFormData = useQuery(api.transactions.queries.getProductForm);
 	const palmProductIds = useQuery(api.transactions.queries.getProductPalmIds);
+	const farmerId = transactionData.transactionGroup?.farmerId as Id<"farmers"> | undefined;
+	const employeesFormData = useQuery(
+		api.transactions.queries.getEmployeesByFarmerIdForm,
+		farmerId ? { farmerId } : "skip",
+	);
 	const addTrasactionLine = useMutation(
 		api.transactions.mutations.addTransactionLine,
 	);
@@ -138,10 +143,10 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 				navigate({ to: "/transactions" });
 			}
 			if (
-			meta.submitAction === "submitted" ||
-			meta.submitAction === "print" ||
-			meta.submitAction === "printSummary"
-		) {
+				meta.submitAction === "submitted" ||
+				meta.submitAction === "print" ||
+				meta.submitAction === "printSummary"
+			) {
 				// 1. Persist status and lines
 				await updateTransactionGroup({
 					transactionGroupId: transactionData.transactionGroup
@@ -260,13 +265,14 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 						<TransactionSummary
 							lines={LinesData}
 							productsData={productsFormData || []}
+							employeesData={employeesFormData || []}
 						/>
 					)}
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-2 h-[100px] justify-center items-center">
+					<div className="grid grid-cols-2 gap-2 h-[100px] justify-center items-center">
 						<form.AppForm>
 							<SubmitButton
 								label="บันทึกแบบร่าง"
-								variant={"ghost"}
+								variant={"outline"}
 								handleSubmit={() => {
 									form.handleSubmit({ submitAction: "pending" });
 								}}
@@ -283,18 +289,18 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 						</form.AppForm>
 						<form.AppForm>
 							<SubmitButton
-								label={`${GroupStatus === "pending" ? "ยืนยันและ พิมพ์" : "แก้ไข้และ พิมพ์"}`}
+								label="พิมพ์เฉพาะสรุป"
+								variant={"outline"}
 								handleSubmit={() => {
-									form.handleSubmit({ submitAction: "print" });
+									form.handleSubmit({ submitAction: "printSummary" });
 								}}
 							/>
 						</form.AppForm>
 						<form.AppForm>
 							<SubmitButton
-								label="พิมพ์สรุป"
-								variant={"outline"}
+								label={`${GroupStatus === "pending" ? "ยืนยันและ พิมพ์" : "แก้ไข้และ พิมพ์"}`}
 								handleSubmit={() => {
-									form.handleSubmit({ submitAction: "printSummary" });
+									form.handleSubmit({ submitAction: "print" });
 								}}
 							/>
 						</form.AppForm>

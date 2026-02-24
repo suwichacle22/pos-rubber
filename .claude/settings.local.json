@@ -18,7 +18,8 @@
       "Bash(git -C \"C:\\\\Suwi\\\\Projects\\\\pos-rubber\" log --oneline --all -- convex/schema.ts)",
       "Bash(npx tsc:*)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(bunx --bun shadcn@latest add:*)"
     ]
   }
 }

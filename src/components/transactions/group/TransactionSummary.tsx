@@ -4,12 +4,10 @@ import {
 	CardHeader,
 	CardTitle,
 	CardContent,
-	CardAction,
 	CardFooter,
 } from "@/components/ui/card";
-import { summaryTransactionText, formatNumber } from "@/utils/utils";
 
-interface ProductData {
+interface LookupData {
 	value: string;
 	label: string;
 }
@@ -17,14 +15,18 @@ interface ProductData {
 export default function TransactionSummary({
 	lines,
 	productsData,
+	employeesData,
 }: {
 	lines: TransactionLinesType[];
-	productsData: ProductData[];
+	productsData: LookupData[];
+	employeesData: LookupData[];
 }) {
 	const getProductName = (productId: string) =>
 		productsData.find((p) => p.value === productId)?.label ?? "";
+	const getEmployeeName = (employeeId: string) =>
+		employeesData.find((e) => e.value === employeeId)?.label ?? "";
 
-	// Group lines by productId for summary
+	// ── Group by product ──
 	const productGroups = new Map<
 		string,
 		{
@@ -65,7 +67,58 @@ export default function TransactionSummary({
 		productGroups.set(line.productId, existing);
 	}
 
-	// Grand totals
+	// ── Group by employee → product ──
+	const employeeGroups = new Map<
+		string,
+		{
+			employeeName: string;
+			products: Map<
+				string,
+				{
+					productName: string;
+					totalWeight: number;
+					price: number;
+					totalAmount: number;
+					employeeAmount: number;
+				}
+			>;
+			totalEmployeeAmount: number;
+		}
+	>();
+
+	for (const line of lines) {
+		if (!line.employeeId || !line.productId) continue;
+		const empName = getEmployeeName(line.employeeId);
+		const existing = employeeGroups.get(line.employeeId) ?? {
+			employeeName: empName,
+			products: new Map(),
+			totalEmployeeAmount: 0,
+		};
+
+		const prodName = getProductName(line.productId);
+		const existingProd = existing.products.get(line.productId) ?? {
+			productName: prodName,
+			totalWeight: 0,
+			price: 0,
+			totalAmount: 0,
+			employeeAmount: 0,
+		};
+
+		existingProd.totalWeight += parseFloat(line.weight) || 0;
+		existingProd.price = parseFloat(line.price) || 0;
+		existingProd.totalAmount += parseFloat(line.totalAmount) || 0;
+		const empAmt =
+			line.isTransportationFee && line.transportationFeeEmployeeAmount
+				? parseFloat(line.transportationFeeEmployeeAmount) || 0
+				: parseFloat(line.employeeAmount) || 0;
+		existingProd.employeeAmount += empAmt;
+		existing.products.set(line.productId, existingProd);
+
+		existing.totalEmployeeAmount += empAmt;
+		employeeGroups.set(line.employeeId, existing);
+	}
+
+	// ── Grand totals ──
 	let grandTotalAmount = 0;
 	let grandFarmerAmount = 0;
 	let grandEmployeeAmount = 0;
@@ -83,8 +136,10 @@ export default function TransactionSummary({
 				<CardTitle>สรุปรายการ</CardTitle>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4 pt-4"></CardContent>
+
+			{/* ── By Product ── */}
 			<div className="w-full border-t gap-2 p-6 pt-4">
-				<h3 className="font-semibold mb-2">สรุปยอดซื้อ</h3>
+				<h3 className="font-semibold mb-2">สรุปยอดซื้อ (ตามสินค้า)</h3>
 				{[...productGroups.entries()].map(([productId, agg]) => (
 					<div key={productId} className="mb-3">
 						<p className="font-medium">{agg.productName}</p>
@@ -110,7 +165,40 @@ export default function TransactionSummary({
 					</div>
 				))}
 			</div>
-			{/* Grouped product summary + grand total */}
+
+			{/* ── By Employee ── */}
+			{employeeGroups.size > 0 && (
+				<div className="w-full border-t gap-2 p-6 pt-4">
+					<h3 className="font-semibold mb-2">สรุปยอดซื้อ (ตามคนตัด)</h3>
+					{[...employeeGroups.entries()].map(([employeeId, emp]) => (
+						<div key={employeeId} className="mb-3">
+							<p className="font-medium">{emp.employeeName}</p>
+							{[...emp.products.entries()].map(([productId, prod]) => (
+								<div key={productId} className="ml-2">
+									<p className="text-sm text-muted-foreground">
+										{prod.productName}: {prod.totalWeight} x {prod.price} ={" "}
+										{prod.totalAmount}
+									</p>
+									<div className="flex justify-between">
+										<span className="text-sm">ยอดคนตัด:</span>
+										<span className="text-sm">{prod.employeeAmount}</span>
+									</div>
+								</div>
+							))}
+							{emp.products.size > 1 && (
+								<div className="flex justify-between ml-2 border-t mt-1 pt-1">
+									<span className="text-sm font-medium">รวม:</span>
+									<span className="text-sm font-medium">
+										{emp.totalEmployeeAmount}
+									</span>
+								</div>
+							)}
+						</div>
+					))}
+				</div>
+			)}
+
+			{/* ── Grand Total ── */}
 			<CardFooter className="flex flex-col gap-4 pt-4">
 				<div className="w-full border-t gap-2 p-4 pt-4">
 					<div className="flex justify-between font-semibold">

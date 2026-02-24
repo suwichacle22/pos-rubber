@@ -255,6 +255,99 @@ function printProductSummary(
 	p.partialCut();
 }
 
+function printEmployeeSummary(
+	p: ThermalPrinter,
+	lines: PrintLine[],
+	opts: {
+		farmerName: string | null | undefined;
+		dateThai: string;
+		time: string;
+		groupName?: string;
+	},
+) {
+	// Collect unique employees (skip lines without employee)
+	const uniqueEmployees = new Set<string>();
+	for (const line of lines) {
+		if (line.employeeDisplayName) {
+			uniqueEmployees.add(line.employeeDisplayName);
+		}
+	}
+
+	// Skip if only 1 or 0 employees — no need for per-employee breakdown
+	if (uniqueEmployees.size <= 1) return;
+
+	// Group lines by employee → product
+	const employeeGroups = new Map<
+		string,
+		{
+			lines: PrintLine[];
+		}
+	>();
+
+	for (const line of lines) {
+		if (!line.employeeDisplayName) continue;
+		const existing = employeeGroups.get(line.employeeDisplayName) ?? {
+			lines: [],
+		};
+		existing.lines.push(line);
+		employeeGroups.set(line.employeeDisplayName, existing);
+	}
+
+	for (const [employeeName, group] of employeeGroups) {
+		printShopHeader(p, { ...opts });
+		p.println(`สรุปยอดซื้อ - คนตัด: ${employeeName}`);
+		p.println("");
+
+		// Group this employee's lines by product
+		const productGroups = new Map<
+			string,
+			{
+				totalWeight: number;
+				price: number;
+				totalAmount: number;
+				employeeAmount: number;
+			}
+		>();
+
+		for (const line of group.lines) {
+			const name = line.productName || "Unknown";
+			const existing = productGroups.get(name) ?? {
+				totalWeight: 0,
+				price: 0,
+				totalAmount: 0,
+				employeeAmount: 0,
+			};
+			existing.totalWeight += line.weight ?? 0;
+			existing.price = line.price ?? 0;
+			existing.totalAmount += line.totalAmount ?? 0;
+			existing.employeeAmount += line.employeeAmount ?? 0;
+			productGroups.set(name, existing);
+		}
+
+		let grandEmployeeAmount = 0;
+
+		for (const [productName, agg] of productGroups) {
+			p.println(productName);
+			p.println(
+				`  ${agg.totalWeight} x ${agg.price} = ${agg.totalAmount}`,
+			);
+			p.println(`  ยอดคนตัด:  ${agg.employeeAmount}`);
+			p.println("");
+			grandEmployeeAmount += agg.employeeAmount;
+		}
+
+		p.println("------------------------------------------");
+		p.println("รวม");
+		p.bold(true);
+		p.setTextSize(1, 1);
+		p.println(`  ยอดคนตัด:  ${grandEmployeeAmount}`);
+		p.setTextSize(0, 0);
+		p.bold(false);
+		p.println("------------------------------------------");
+		p.partialCut();
+	}
+}
+
 // ─── Main orchestrator ───────────────────────────────────────
 
 /**
@@ -325,6 +418,9 @@ export async function printReceipt(
 		printProductSummary(printer, transactionData.lines, headerBase);
 	}
 
+	// Per-employee summary receipts (only when multiple employees)
+	printEmployeeSummary(printer, transactionData.lines, headerBase);
+
 	// Aggregated promotion receipt for "split" lines (printed after summary)
 	printPromotionSummary(printer, transactionData.lines, headerBase);
 
@@ -359,6 +455,9 @@ export async function printSummaryOnly(
 	const headerBase = { farmerName, dateThai, time, groupName };
 
 	printProductSummary(printer, transactionData.lines, headerBase);
+
+	// Per-employee summary receipts (only when multiple employees)
+	printEmployeeSummary(printer, transactionData.lines, headerBase);
 
 	// Aggregated promotion receipt for "split" lines (printed after summary)
 	printPromotionSummary(printer, transactionData.lines, headerBase);

@@ -14,19 +14,13 @@ function RouteComponent() {
 		convexQuery(api.transactions.queries.getFarmersWithEmployees),
 	);
 	return (
-		<div className="flex flex-col items-center justify-center gap-4">
-			<div className="flex flex-col items-center justify-center gap-4 w-full max-w-2xl">
-				<FarmerForm />
-			</div>
-			<div className="flex flex-col gap-4 w-full max-w-2xl">
-				<div className="flex text-2xl font-bold justify-items-start items-start">
-					เกษตรกร
-				</div>
-				<div className="flex flex-col gap-2">
-					{farmers?.map((farmer) => (
-						<FarmerCard key={farmer._id} farmerData={farmer} />
-					))}
-				</div>
+		<div className="flex flex-col gap-8 p-6 max-w-2xl mx-auto">
+			<FarmerForm />
+			<div className="text-2xl font-bold">เกษตรกร</div>
+			<div className="flex flex-col gap-4">
+				{farmers?.map((farmer) => (
+					<FarmerCard key={farmer._id} farmerData={farmer} />
+				))}
 			</div>
 		</div>
 	);

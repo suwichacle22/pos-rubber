@@ -269,6 +269,41 @@ export const readGroupLines = internalQuery({
 	},
 });
 
+// transaction list page — data table
+
+export const getAllTransactionLinesWithDetails = query({
+	args: {},
+	returns: v.any(),
+	handler: async ({ db }) => {
+		const lines = await db.query("transactionLines").collect();
+
+		const result = await asyncMap(lines, async (line) => {
+			const group = await db.get(line.transactionGroupId);
+			const farmer =
+				group?.farmerId ? await db.get(group.farmerId) : null;
+			const product = line.productId
+				? await db.get(line.productId)
+				: null;
+
+			return {
+				_id: line._id,
+				transactionGroupId: line.transactionGroupId,
+				groupCreationTime: group?._creationTime ?? null,
+				groupStatus: group?.status ?? null,
+				farmerName: farmer?.displayName ?? "ยังไม่มีชื่อ",
+				productName: product?.productName ?? "-",
+				weight: line.weight ?? null,
+				price: line.price ?? null,
+				totalAmount: line.totalAmount ?? null,
+			};
+		});
+
+		return result.sort(
+			(a, b) => (b.groupCreationTime ?? 0) - (a.groupCreationTime ?? 0),
+		);
+	},
+});
+
 // dashboard section
 
 export const getDailySummary = query({

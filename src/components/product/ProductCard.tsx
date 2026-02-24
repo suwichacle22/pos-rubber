@@ -1,4 +1,4 @@
-﻿import type { Id } from "convex/_generated/dataModel";
+import type { Id } from "convex/_generated/dataModel";
 import {
 	Card,
 	CardContent,
@@ -7,6 +7,7 @@ import {
 	CardTitle,
 } from "../ui/card";
 import { ProductPriceForm } from "./ProductPriceForm";
+import { formatDateThaiConvex } from "@/utils/utils";
 
 export default function ProductCard({
 	productData,
@@ -26,21 +27,29 @@ export default function ProductCard({
 			</CardHeader>
 			<CardContent className="space-y-2">
 				<p>
-					Latest price:{" "}
+					ราคาล่าสุด:{" "}
 					{productData.latestPrice === null
-						? "No price yet"
+						? "ยังไม่มีราคา"
 						: productData.latestPrice.toLocaleString()}
 				</p>
 				{productData.latestPriceAt && (
 					<p className="text-sm text-muted-foreground">
-						Last price update: {new Date(productData.latestPriceAt).toLocaleString()}
+						อัพเดทราคาล่าสุด:{" "}
+						{(() => {
+							const { dateThai, time } = formatDateThaiConvex(productData.latestPriceAt);
+							return `${dateThai} ${time}`;
+						})()}
 					</p>
 				)}
 				<ProductPriceForm productId={productData._id} />
 			</CardContent>
 			<CardFooter>
 				<p className="text-sm text-muted-foreground">
-					Created at: {new Date(productData._creationTime).toLocaleDateString()}
+					วันที่สร้าง:{" "}
+					{(() => {
+						const { dateThai } = formatDateThaiConvex(productData._creationTime);
+						return dateThai;
+					})()}
 				</p>
 			</CardFooter>
 		</Card>
