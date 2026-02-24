@@ -36,6 +36,18 @@ export const TransactionLineHarvestRate = withForm({
 												`transactionLines[${index}].employeeId`,
 												"",
 											);
+											// Farmer gets full total when harvest rate is off
+											const totalAmount = form.getFieldValue(
+												`transactionLines[${index}].totalAmount`,
+											);
+											form.setFieldValue(
+												`transactionLines[${index}].farmerAmount`,
+												totalAmount || "",
+											);
+											form.setFieldValue(
+												`transactionLines[${index}].employeeAmount`,
+												"",
+											);
 										}
 										if (value) {
 											form.setFieldValue(

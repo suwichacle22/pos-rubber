@@ -60,20 +60,38 @@ export const TransactionLineWeight = withForm({
 						listeners={{
 							onChangeDebounceMs: 100,
 							onChange: ({ value }) => {
-								const farmerRatio = form.getFieldValue(
-									`transactionLines[${index}].farmerRatio`,
+								const isSplit = form.getFieldValue(
+									`transactionLines[${index}].isSplit`,
 								);
-								const employeeRatio = form.getFieldValue(
-									`transactionLines[${index}].employeeRatio`,
+								const isHarvestRate = form.getFieldValue(
+									`transactionLines[${index}].isHarvestRate`,
 								);
-								form.setFieldValue(
-									`transactionLines[${index}].farmerAmount`,
-									calculateSplitAmount(value, farmerRatio),
-								);
-								form.setFieldValue(
-									`transactionLines[${index}].employeeAmount`,
-									calculateSplitAmount(value, employeeRatio),
-								);
+
+								if (isSplit === "none" && !isHarvestRate) {
+									form.setFieldValue(
+										`transactionLines[${index}].farmerAmount`,
+										value,
+									);
+									form.setFieldValue(
+										`transactionLines[${index}].employeeAmount`,
+										"",
+									);
+								} else {
+									const farmerRatio = form.getFieldValue(
+										`transactionLines[${index}].farmerRatio`,
+									);
+									const employeeRatio = form.getFieldValue(
+										`transactionLines[${index}].employeeRatio`,
+									);
+									form.setFieldValue(
+										`transactionLines[${index}].farmerAmount`,
+										calculateSplitAmount(value, farmerRatio),
+									);
+									form.setFieldValue(
+										`transactionLines[${index}].employeeAmount`,
+										calculateSplitAmount(value, employeeRatio),
+									);
+								}
 							},
 						}}
 						children={(field) => (

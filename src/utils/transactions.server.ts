@@ -104,18 +104,49 @@ export async function printReceipt(
 				printer.println(employeeAllTransportationFeeText);
 			}
 			printer.println("");
-			printer.println(`คนตัด: ${line.employeeDisplayName}`);
 		}
-		// Change to Summary
-		// if (line.isHarvestRate) {
-		// 	printer.println(`อัตราค่าตัด: ${harvestRateText}`);
-		// 	printer.println(`ยอดค่าตัด:  ${line.employeeAmount}`);
-		// 	printer.setTextSize(1, 1);
-		// 	printer.println(`เหลือ:     ${line.farmerAmount}`);
-		// 	printer.setTextSize(0, 0);
-		// 	printer.println("");
-		// 	printer.println(`คนตัด: ${line.employeeDisplayName}`);
-		// }
+		if (line.isHarvestRate) {
+			printer.println(`ยอดค่าตัด:  ${line.employeeAmount}`);
+			printer.setTextSize(1, 1);
+			printer.println(`เหลือ:     ${line.farmerAmount}`);
+			printer.setTextSize(0, 0);
+			printer.println("");
+		}
+		printer.println(`คนตัด: ${line.employeeDisplayName}`);
+		printer.partialCut();
+		printer.println("ทรัพย์ทวี");
+		printer.println("โทร: 089-474-0467");
+		printer.println("เปิดทุกวัน 7.00 - 17.00 น.");
+		printer.println("------------------------------------------");
+		printer.println(`ชื่อ: ${transactionData.farmer?.displayName}`);
+		printer.println(`วันที่และเวลา: ${dateThai} ${time}`);
+		printer.println(`สินค้า: ${line.productName}`);
+		printer.println("------------------------------------------");
+		if (line.isVehicle) {
+			printer.println(`ทะเบียนรถยนต์:    ${line.carLicense}`);
+			printer.println(`น้ำหนักรถยนต์เข้า:  ${line.weightVehicleIn}`);
+			printer.println(`น้ำหนักรถยนต์ออก:  ${line.weightVehicleOut}`);
+			printer.bold(true);
+			printer.println(`น้ำหนักสินค้า:      ${line.weight}`);
+			printer.bold(false);
+			printer.println(``);
+		}
+		printer.setTextSize(1, 1);
+		printer.println(summaryCalculateText);
+		printer.println("");
+		printer.println("");
+		if (line.isSplit !== "none") {
+			if (!line.isTransportationFee) {
+				printer.println(employeeAmountText);
+			} else if (line.isTransportationFee) {
+				printer.println(employeeAllTransportationFeeText);
+			}
+			printer.println("");
+		}
+		if (line.isHarvestRate) {
+			printer.println(`ยอดค่าตัด:  ${line.employeeAmount}`);
+		}
+		printer.println(`คนตัด: ${line.employeeDisplayName}`);
 		printer.partialCut();
 	}
 	try {

@@ -78,8 +78,19 @@ export const TransactionLineSplit = withForm({
 									`transactionLines[${index}].employeeAmount`,
 									employeeAmount,
 								);
+							} else if (value === "none") {
+								// Farmer gets full total when no split
+								form.setFieldValue(
+									`transactionLines[${index}].farmerAmount`,
+									totalAmount || "",
+								);
+								form.setFieldValue(
+									`transactionLines[${index}].employeeAmount`,
+									"",
+								);
+								form.setFieldValue(`transactionLines[${index}].employeeId`, "");
 							} else {
-								// Clear amounts when split is "none" or custom with no ratios
+								// Clear amounts for custom with no ratios yet
 								form.setFieldValue(
 									`transactionLines[${index}].farmerAmount`,
 									"",

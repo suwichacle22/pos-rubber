@@ -172,6 +172,11 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 		(state) => state.values.transactionLines,
 	);
 
+	const GroupStatus = useStore(
+		form.store,
+		(state) => state.values.transactionGroup.status,
+	);
+
 	return (
 		<div className="flex flex-col gap-4 justify-center items-center p-4">
 			<form
@@ -246,7 +251,7 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 
 						<form.AppForm>
 							<SubmitButton
-								label="จ่ายแล้ว (พิมพ์ใบเสร็จ)"
+								label={`${GroupStatus === "pending" ? "จ่ายแล้ว" : "แก้ไข้"} (พิมพ์ใบเสร็จ)`}
 								handleSubmit={() => {
 									form.handleSubmit({ submitAction: "submitted" });
 								}}

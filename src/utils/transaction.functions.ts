@@ -32,6 +32,5 @@ export const getPrintTransactionGroupSummary = createServerFn({
 				transactionGroupId: data.transactionGroupId as Id<"transactionGroups">,
 			},
 		);
-		// return await printReceipt(transactionData);
-		return { result: "print done" };
+		return await printReceipt(transactionData);
 	});
