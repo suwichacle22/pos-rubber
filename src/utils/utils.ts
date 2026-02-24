@@ -173,6 +173,7 @@ export function summaryTransactionText(data: TransactionLineFormValues) {
 		transportationFeeAmount,
 		harvestRate,
 		promotionRate,
+		promotionAmount,
 	} = data;
 	const formatWeight = formatNumber(weight);
 	const formatPrice = formatNumber(price);
@@ -189,6 +190,8 @@ export function summaryTransactionText(data: TransactionLineFormValues) {
 		transportationFeeEmployeeAmount,
 	);
 	const formatHarvestRate = formatRatioPalm(harvestRate);
+	const formatPromotionRate = formatRatio(promotionRate);
+	const formatPromotionAmount = formatNumber(promotionAmount);
 
 	const summaryCalculateText = `${formatWeight} x ${formatPrice} = ${formatTotalAmount}`;
 	const farmerAmountText = `${formatFarmerRatio}:  ${formatFarmerAmount}`;
@@ -200,6 +203,8 @@ export function summaryTransactionText(data: TransactionLineFormValues) {
 	const employeeAmountTransportationFeeText = `= ${formatTransportationFeeEmployeeAmount}`;
 	const employeeAllTransportationFeeText = `${employeeCalculateTransportationFeeText} ${employeeAmountTransportationFeeText}`;
 	const harvestRateText = `ตัน ${formatHarvestRate}`;
+	const promotionRateText = `อัตราค่านำส่ง: ${formatPromotionRate}`;
+	const promotionAmountText = `ยอดค่านำส่ง:  ${formatPromotionAmount}`;
 	return {
 		summaryCalculateText,
 		farmerAmountText,
@@ -211,6 +216,8 @@ export function summaryTransactionText(data: TransactionLineFormValues) {
 		employeeAmountTransportationFeeText,
 		employeeAllTransportationFeeText,
 		harvestRateText,
+		promotionRateText,
+		promotionAmountText,
 	};
 }
 

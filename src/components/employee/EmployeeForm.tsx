@@ -33,7 +33,7 @@ export function EmployeeForm({
 				farmerId,
 				displayName: parsed.displayName,
 			});
-			toast.success("เพิ่มพนักงานสำเร็จ");
+			toast.success("เพิ่มคนตัดสำเร็จ");
 			form.reset();
 			onSuccess?.();
 		},
@@ -49,7 +49,7 @@ export function EmployeeForm({
 		>
 			<Card className="border-dashed">
 				<CardHeader className="py-3">
-					<CardTitle className="text-base">เพิ่มพนักงาน</CardTitle>
+					<CardTitle className="text-base">เพิ่มคนตัด</CardTitle>
 				</CardHeader>
 				<CardContent className="py-3">
 					<FieldGroup>
@@ -57,8 +57,8 @@ export function EmployeeForm({
 							name="displayName"
 							children={(field) => (
 								<field.TextField
-									label="ชื่อพนักงาน"
-									placeholder="กรอกชื่อพนักงาน..."
+									label="ชื่อคนตัด"
+									placeholder="กรอกชื่อคนตัด..."
 								/>
 							)}
 						/>

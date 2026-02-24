@@ -269,7 +269,7 @@ export const TransactionLineSplit = withForm({
 											},
 										}}
 										children={(field) => (
-											<field.NumericField label="ยอดพนักงาน" disabled />
+											<field.NumericField label="ยอดคนตัด" disabled />
 										)}
 									/>
 									<form.AppField

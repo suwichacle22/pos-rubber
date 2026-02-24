@@ -10,7 +10,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import type { FieldOrientation } from "@/utils/type";
 import { useFieldContext } from "../formContext";
 import type { SelectData } from "../formContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function ComboBoxField({
 	label,
@@ -28,14 +28,17 @@ export function ComboBoxField({
 	const field = useFieldContext<string>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 	const [query, setQuery] = useState("");
+	const hasSynced = useRef(false);
 
 	const selectedItem = field.state.value
 		? selectData.find((i) => i.value === field.state.value)
 		: undefined;
 
+	// Sync query once on mount when form loads with existing value (e.g. editing draft)
 	useEffect(() => {
-		if (query === "" && selectedItem) {
+		if (!hasSynced.current && query === "" && selectedItem) {
 			setQuery(selectedItem.label);
+			hasSynced.current = true;
 		}
 	}, [selectedItem, query]);
 	return (

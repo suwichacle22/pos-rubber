@@ -20,13 +20,16 @@ import { useMutation, useQuery } from "convex/react";
 import type { Id } from "convex/_generated/dataModel";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
-import { getPrintTransactionGroupSummary } from "@/utils/transaction.functions";
+import {
+	getPrintTransactionGroupSummary,
+	getPrintTransactionGroupSummaryOnly,
+} from "@/utils/transaction.functions";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 
 type FormMeta = {
-	submitAction: "pending" | "submitted" | null;
+	submitAction: "pending" | "submitted" | "print" | "printSummary" | null;
 };
 
 const defaultMeta: FormMeta = {
@@ -70,6 +73,9 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 
 	const printTransactionGroupSummary = useServerFn(
 		getPrintTransactionGroupSummary,
+	);
+	const printTransactionGroupSummaryOnly = useServerFn(
+		getPrintTransactionGroupSummaryOnly,
 	);
 	const form = useAppForm({
 		...transactionFormOptions,
@@ -131,7 +137,11 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 			if (meta.submitAction === "pending") {
 				navigate({ to: "/transactions" });
 			}
-			if (meta.submitAction === "submitted") {
+			if (
+			meta.submitAction === "submitted" ||
+			meta.submitAction === "print" ||
+			meta.submitAction === "printSummary"
+		) {
 				// 1. Persist status and lines
 				await updateTransactionGroup({
 					transactionGroupId: transactionData.transactionGroup
@@ -154,11 +164,20 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 					transactionLines: parsedLinesNet,
 				});
 				// 2. Print receipt via Convex action + local printer
-				await printTransactionGroupSummary({
-					data: {
-						transactionGroupId: value.transactionGroup.transactionGroupId,
-					},
-				});
+				if (meta.submitAction === "print") {
+					await printTransactionGroupSummary({
+						data: {
+							transactionGroupId: value.transactionGroup.transactionGroupId,
+						},
+					});
+				}
+				if (meta.submitAction === "printSummary") {
+					await printTransactionGroupSummaryOnly({
+						data: {
+							transactionGroupId: value.transactionGroup.transactionGroupId,
+						},
+					});
+				}
 
 				toast.success("สำเร็จ", {
 					description: "รายการเสร็จสิ้น",
@@ -237,23 +256,45 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 					{LinesData.some((line) =>
 						palmProductIds?.some((product) => product._id === line.productId),
 					) && <TransactionPalmGroup form={form} />}
-					{LinesData.length > 1 && <TransactionSummary lines={LinesData} />}
-					<div className="grid grid-cols-2 gap-2 h-[100px] justify-center items-center">
+					{LinesData.length > 1 && (
+						<TransactionSummary
+							lines={LinesData}
+							productsData={productsFormData || []}
+						/>
+					)}
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-2 h-[100px] justify-center items-center">
 						<form.AppForm>
 							<SubmitButton
 								label="บันทึกแบบร่าง"
-								variant={"outline"}
+								variant={"ghost"}
 								handleSubmit={() => {
 									form.handleSubmit({ submitAction: "pending" });
 								}}
 							/>
 						</form.AppForm>
-
 						<form.AppForm>
 							<SubmitButton
-								label={`${GroupStatus === "pending" ? "จ่ายแล้ว" : "แก้ไข้"} (พิมพ์ใบเสร็จ)`}
+								label={`${GroupStatus === "pending" ? "ยืนยัน" : "แก้ไข้"}`}
+								variant={"outline"}
 								handleSubmit={() => {
 									form.handleSubmit({ submitAction: "submitted" });
+								}}
+							/>
+						</form.AppForm>
+						<form.AppForm>
+							<SubmitButton
+								label={`${GroupStatus === "pending" ? "ยืนยันและ พิมพ์" : "แก้ไข้และ พิมพ์"}`}
+								handleSubmit={() => {
+									form.handleSubmit({ submitAction: "print" });
+								}}
+							/>
+						</form.AppForm>
+						<form.AppForm>
+							<SubmitButton
+								label="พิมพ์สรุป"
+								variant={"outline"}
+								handleSubmit={() => {
+									form.handleSubmit({ submitAction: "printSummary" });
 								}}
 							/>
 						</form.AppForm>

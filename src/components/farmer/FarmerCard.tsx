@@ -30,7 +30,7 @@ export default function FarmerCard({
 			<CardContent className="flex flex-col gap-4">
 				{farmerData.employees && farmerData.employees.length > 0 && (
 					<div className="flex flex-col gap-2 mt-2">
-						<div className="text-lg font-semibold">พนักงาน:</div>
+						<div className="text-lg font-semibold">คนตัด:</div>
 						<div className="flex flex-col gap-2 pl-4">
 							{farmerData.employees.map((employee) => (
 								<div
@@ -60,7 +60,7 @@ export default function FarmerCard({
 						size="sm"
 						onClick={() => setShowAddEmployee((prev) => !prev)}
 					>
-						{showAddEmployee ? "ปิด" : "เพิ่มพนักงาน"}
+						{showAddEmployee ? "ปิด" : "เพิ่มคนตัด"}
 					</Button>
 					{showAddEmployee && (
 						<EmployeeForm

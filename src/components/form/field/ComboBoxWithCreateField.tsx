@@ -9,7 +9,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import type { FieldOrientation } from "@/utils/type";
 import { useFieldContext } from "../formContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { Id } from "convex/_generated/dataModel";
 
@@ -42,6 +42,7 @@ export function ComboBoxWithCreateField<TValue extends string = string>({
 	const field = useFieldContext<TValue>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 	const [query, setQuery] = useState("");
+	const hasSynced = useRef(false);
 
 	const trimmed = query.trim();
 	const lowered = trimmed.toLocaleLowerCase();
@@ -66,10 +67,11 @@ export function ComboBoxWithCreateField<TValue extends string = string>({
 		? itemsForView.find((i) => i.value === field.state.value)
 		: undefined;
 
-	// Sync query when form loads with existing value (e.g. editing draft) - only when query is empty to avoid overwriting user typing
+	// Sync query once on mount when form loads with existing value (e.g. editing draft)
 	useEffect(() => {
-		if (query === "" && selectedItem) {
+		if (!hasSynced.current && query === "" && selectedItem) {
 			setQuery(selectedItem.label ?? "");
+			hasSynced.current = true;
 		}
 	}, [selectedItem, query]);
 

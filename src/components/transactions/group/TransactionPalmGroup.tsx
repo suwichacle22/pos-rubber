@@ -157,20 +157,20 @@ export const TransactionPalmGroup = withForm({
 													palmProductId,
 												)}
 											/>
-											<form.AppField
-												name="transactionPalmGroup.harvestRate"
-												validators={numericValidator}
-												listeners={{
-													onChangeDebounceMs: 100,
-													onChange: ({ value }) => {
-														spreadHarvestRate(value ?? "");
-													},
-												}}
-												children={(field) => (
-													<field.NumericField label="ค่าตัด" />
-												)}
-											/>
-											<div className="grid grid-cols-2 gap-2">
+											<div className="grid grid-cols-3 gap-2">
+												<form.AppField
+													name="transactionPalmGroup.harvestRate"
+													validators={numericValidator}
+													listeners={{
+														onChangeDebounceMs: 100,
+														onChange: ({ value }) => {
+															spreadHarvestRate(value ?? "");
+														},
+													}}
+													children={(field) => (
+														<field.NumericField label="ค่าตัด" />
+													)}
+												/>
 												<form.AppField
 													name="transactionPalmGroup.promotionTo"
 													listeners={{
@@ -184,7 +184,7 @@ export const TransactionPalmGroup = withForm({
 															orientation="vertical"
 															items={[
 																{ label: "รวม", value: "sum" },
-																{ label: "แบ่ง", value: "split" },
+																{ label: "แยก", value: "split" },
 															]}
 														/>
 													)}

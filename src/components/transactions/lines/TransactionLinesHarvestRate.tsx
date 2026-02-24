@@ -167,7 +167,7 @@ export const TransactionLineHarvestRate = withForm({
 								orientation="vertical"
 								items={[
 									{ label: "รวม", value: "sum" },
-									{ label: "แบ่ง", value: "split" },
+									{ label: "แยก", value: "split" },
 								]}
 							/>
 						)}
