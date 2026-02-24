@@ -1,6 +1,13 @@
-import { transactionGroups, transactionLines } from "@/db/schema";
 import { formOptions } from "@tanstack/react-form";
 import { z } from "zod";
+import type { Id } from "convex/_generated/dataModel";
+
+const emptyStringToUndefined = (val: string | null | undefined) => (val === "" || !val ? undefined : val);
+const stringToNumberOrUndefined = (val: string | null | undefined) => {
+	if (val === "" || !val) return undefined;
+	const num = parseFloat(val);
+	return Number.isNaN(num) ? undefined : num;
+};
 
 export const numericValidator = {
 	onChange: ({ value }: { value: string }) => {
@@ -22,12 +29,6 @@ export const transactionGroupSchema = z.object({
 	farmerId: z.string().min(1),
 	status: z.enum(["pending", "submitted"]),
 });
-
-export const transactionGroupSchemaNew = transactionGroupSchema.omit({
-	tranasctionGroupId: true,
-});
-
-export type TransactionGroupNewType = z.infer<typeof transactionGroupSchemaNew>;
 
 export const transactionLineSchema = z.object({
 	transactionGroupId: z.string().min(1),
@@ -114,7 +115,7 @@ export const transactionLineSchema = z.object({
 		.nullable()
 		.transform((val) => (val === "" || !val ? null : val)),
 	promotionTo: z
-		.union([z.enum(["farmer", "employee"]), z.literal(""), z.null()])
+		.union([z.enum(["sum", "split"]), z.literal(""), z.null()])
 		.transform((val) => (val === "" || !val ? null : val)),
 	promotionAmount: z
 		.string()
@@ -126,45 +127,191 @@ export const transactionLineSchema = z.object({
 		.transform((val) => (val === "" || !val ? null : val)),
 });
 
-export const transactionLinesNewFormSchema = z.array(
-	transactionLineSchema.omit({
-		transactionLinesId: true,
-	}),
-);
-
-export const transactionLinesDefaultForm = () => {
+export const convexUpdateTransactionLineSchema = z.object({
+	transactionLinesId: z.string().min(1).transform(val => val as Id<"transactionLines">),
+	employeeId: z.string().nullable().transform(val => emptyStringToUndefined(val) as Id<"employees"> | undefined),
+	productId: z.string().nullable().transform(val => emptyStringToUndefined(val) as Id<"products"> | undefined),
+	carLicenseId: z.string().nullable().transform(val => emptyStringToUndefined(val) as Id<"carlicenses"> | undefined),
+	isVehicle: z.boolean(),
+	weightVehicleIn: z.string().nullable().transform(stringToNumberOrUndefined),
+	weightVehicleOut: z.string().nullable().transform(stringToNumberOrUndefined),
+	weight: z.string().nullable().transform(stringToNumberOrUndefined),
+	price: z.string().nullable().transform(stringToNumberOrUndefined),
+	totalAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	isSplit: z.enum(["none", "6/4", "55/45", "1/2", "58/42", "custom"]),
+	farmerRatio: z.string().nullable().transform(stringToNumberOrUndefined),
+	employeeRatio: z.string().nullable().transform(stringToNumberOrUndefined),
+	farmerAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	employeeAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	isTransportationFee: z.boolean(),
+	transportationFee: z.string().nullable().transform(stringToNumberOrUndefined),
+	transportationFeeAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	transportationFeeFarmerAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	transportationFeeEmployeeAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	farmerPaidType: z.enum(["cash", "bank transfer"]),
+	employeePaidType: z.enum(["cash", "bank transfer"]),
+	isHarvestRate: z.boolean(),
+	harvestRate: z.string().nullable().transform(stringToNumberOrUndefined),
+	promotionRate: z.string().nullable().transform(stringToNumberOrUndefined),
+	promotionTo: z.union([z.enum(["sum", "split"]), z.literal(""), z.null()]).transform(val => emptyStringToUndefined(val) as "sum" | "split" | undefined),
+	promotionAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	totalNetAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+}).transform(data => {
+	const { transactionLinesId, ...rest } = data;
 	return {
-		// transactionId is auto-generated, not included in default form
-		transactionLinesId: "",
-		transactionLineNo: 0,
-		employeeId: "",
-		productId: "",
-		isVehicle: false,
-		carLicense: "",
-		weightVehicleIn: "",
-		weightVehicleOut: "",
-		weight: "",
-		price: "",
-		totalAmount: "",
-		isSplit: "none",
-		farmerRatio: "",
-		employeeRatio: "",
-		farmerAmount: "",
-		employeeAmount: "",
-		isTransportationFee: false,
-		transportationFee: "",
-		transportationFeeAmount: "",
-		transportationFeeFarmerAmount: "",
-		transportationFeeEmployeeAmount: "",
-		farmerPaidType: "cash",
-		employeePaidType: "cash",
-		isHarvestRate: false,
-		harvestRate: "",
-		promotionRate: "",
-		promotionTo: "",
-		promotionAmount: "",
+		transactionLineId: transactionLinesId,
+		...rest
 	};
+});
+
+export type TransactionLineFormValues = {
+	transactionGroupId: string;
+	transactionLinesId: string;
+	employeeId: string;
+	productId: string;
+	isVehicle: boolean;
+	carLicenseId: string;
+	weightVehicleIn: string;
+	weightVehicleOut: string;
+	weight: string;
+	price: string;
+	totalAmount: string;
+	isSplit: "none" | "6/4" | "55/45" | "1/2" | "58/42" | "custom";
+	farmerRatio: string;
+	employeeRatio: string;
+	farmerAmount: string;
+	employeeAmount: string;
+	isTransportationFee: boolean;
+	transportationFee: string;
+	transportationFeeAmount: string;
+	transportationFeeFarmerAmount: string;
+	transportationFeeEmployeeAmount: string;
+	farmerPaidType: "cash" | "bank transfer";
+	employeePaidType: "cash" | "bank transfer";
+	isHarvestRate: boolean;
+	harvestRate: string;
+	promotionRate: string;
+	promotionTo: string;
+	promotionAmount: string;
+	totalNetAmount: string;
 };
+
+export const transactionLinesDefaultForm = (
+	override?: Partial<TransactionLineFormValues>,
+): TransactionLineFormValues => ({
+	transactionGroupId: "",
+	transactionLinesId: "",
+	employeeId: "",
+	productId: "",
+	isVehicle: false,
+	carLicenseId: "",
+	weightVehicleIn: "",
+	weightVehicleOut: "",
+	weight: "",
+	price: "",
+	totalAmount: "",
+	isSplit: "none",
+	farmerRatio: "",
+	employeeRatio: "",
+	farmerAmount: "",
+	employeeAmount: "",
+	isTransportationFee: false,
+	transportationFee: "",
+	transportationFeeAmount: "",
+	transportationFeeFarmerAmount: "",
+	transportationFeeEmployeeAmount: "",
+	farmerPaidType: "cash",
+	employeePaidType: "cash",
+	isHarvestRate: false,
+	harvestRate: "",
+	promotionRate: "",
+	promotionTo: "",
+	promotionAmount: "",
+	totalNetAmount: "",
+	...override,
+});
+
+/** Map a Convex transaction line (with optional fields) to form values matching transactionLinesDefaultForm */
+export function convexLineToFormLine(
+	line: {
+		_id?: string;
+		employeeId?: string;
+		productId?: string;
+		isVehicle?: boolean;
+		carLicenseId?: string;
+		weightVehicleIn?: number;
+		weightVehicleOut?: number;
+		weight?: number;
+		price?: number;
+		totalAmount?: number;
+		isSplit?: "none" | "6/4" | "55/45" | "1/2" | "58/42" | "custom";
+		farmerRatio?: number;
+		employeeRatio?: number;
+		farmerAmount?: number;
+		employeeAmount?: number;
+		isTransportationFee?: boolean;
+		transportationFee?: number;
+		transportationFeeAmount?: number;
+		transportationFeeFarmerAmount?: number;
+		transportationFeeEmployeeAmount?: number;
+		farmerPaidType?: "cash" | "bank transfer";
+		employeePaidType?: "cash" | "bank transfer";
+		isHarvestRate?: boolean;
+		harvestRate?: number;
+		promotionRate?: number;
+		promotionTo?: "sum" | "split" | null;
+		promotionAmount?: number;
+		totalNetAmount?: number;
+	},
+	transactionGroupId: string,
+): TransactionLineFormValues {
+	return transactionLinesDefaultForm({
+		transactionGroupId,
+		transactionLinesId: (line._id as string) ?? "",
+		employeeId: (line.employeeId as string) ?? "",
+		productId: (line.productId as string) ?? "",
+		isVehicle: line.isVehicle ?? false,
+		carLicenseId: (line.carLicenseId as string) ?? "",
+		weightVehicleIn:
+			line.weightVehicleIn != null ? String(line.weightVehicleIn) : "",
+		weightVehicleOut:
+			line.weightVehicleOut != null ? String(line.weightVehicleOut) : "",
+		weight: line.weight != null ? String(line.weight) : "",
+		price: line.price != null ? String(line.price) : "",
+		totalAmount: line.totalAmount != null ? String(line.totalAmount) : "",
+		isSplit: line.isSplit ?? "none",
+		farmerRatio: line.farmerRatio != null ? String(line.farmerRatio) : "",
+		employeeRatio: line.employeeRatio != null ? String(line.employeeRatio) : "",
+		farmerAmount: line.farmerAmount != null ? String(line.farmerAmount) : "",
+		employeeAmount:
+			line.employeeAmount != null ? String(line.employeeAmount) : "",
+		isTransportationFee: line.isTransportationFee ?? false,
+		transportationFee:
+			line.transportationFee != null ? String(line.transportationFee) : "",
+		transportationFeeAmount:
+			line.transportationFeeAmount != null
+				? String(line.transportationFeeAmount)
+				: "",
+		transportationFeeFarmerAmount:
+			line.transportationFeeFarmerAmount != null
+				? String(line.transportationFeeFarmerAmount)
+				: "",
+		transportationFeeEmployeeAmount:
+			line.transportationFeeEmployeeAmount != null
+				? String(line.transportationFeeEmployeeAmount)
+				: "",
+		farmerPaidType: line.farmerPaidType ?? "cash",
+		employeePaidType: line.employeePaidType ?? "cash",
+		isHarvestRate: line.isHarvestRate ?? false,
+		harvestRate: line.harvestRate != null ? String(line.harvestRate) : "",
+		promotionRate: line.promotionRate != null ? String(line.promotionRate) : "",
+		promotionTo: line.promotionTo ?? "",
+		promotionAmount:
+			line.promotionAmount != null ? String(line.promotionAmount) : "",
+		totalNetAmount:
+			line.totalNetAmount != null ? String(line.totalNetAmount) : "",
+	});
+}
 
 export const transactionFormOptions = formOptions({
 	defaultValues: {
@@ -172,7 +319,7 @@ export const transactionFormOptions = formOptions({
 			transactionGroupId: "",
 			groupName: "",
 			farmerId: "",
-			status: "pending",
+			status: "pending" as "pending" | "submitted",
 		},
 		transactionLines: [transactionLinesDefaultForm()],
 		transactionPalmGroup: {
@@ -193,47 +340,8 @@ export const transactionFormSchema = z.object({
 	transactionLines: z.array(transactionLineSchema),
 });
 
-export type TransactionNewGroupType = z.infer<typeof transactionGroupSchema>;
-export type TransactionNewLineType = z.infer<
-	typeof transactionLinesNewFormSchema
->;
-
-export type TransactionGroupDBType = typeof transactionGroups.$inferSelect;
-export type TransactionLineDBType = typeof transactionLines.$inferSelect;
-export type TransactionGroupLinesType = TransactionGroupDBType & {
-	TransactionLines: TransactionLineDBType[];
-};
-
-export type TransactionLinesType = {
-	transactionLinesId: string;
-	transactionLineNo: number;
-	employeeId: string;
-	productId: string;
-	isVehicle: boolean;
-	carLicense: string;
-	weightVehicleIn: string;
-	weightVehicleOut: string;
-	weight: string;
-	price: string;
-	totalAmount: string;
-	isSplit: string;
-	farmerRatio: string;
-	employeeRatio: string;
-	farmerAmount: string;
-	employeeAmount: string;
-	isTransportationFee: boolean;
-	transportationFee: string;
-	transportationFeeAmount: string;
-	transportationFeeFarmerAmount: string;
-	transportationFeeEmployeeAmount: string;
-	farmerPaidType: string;
-	employeePaidType: string;
-	isHarvestRate: boolean;
-	harvestRate: string;
-	promotionRate: string;
-	promotionTo: string;
-	promotionAmount: string;
-};
+/** Form line shape — use TransactionLineFormValues for form/summary display */
+export type TransactionLinesType = TransactionLineFormValues;
 
 export const addProductSchema = z.object({
 	productName: z

@@ -7,7 +7,15 @@
       "WebFetch(domain:docs.convex.dev)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:stack.convex.dev)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git log:*)",
+      "Bash(bun install)",
+      "Bash(git -C \"C:\\\\Suwi\\\\Projects\\\\pos-rubber\" log --oneline --all)",
+      "Bash(git -C \"C:\\\\Suwi\\\\Projects\\\\pos-rubber\" show eacbff3:src/utils/dashboard.server.ts)",
+      "Bash(git -C \"C:\\\\Suwi\\\\Projects\\\\pos-rubber\" show eacbff3:drizzle/schema.ts)",
+      "Bash(git -C \"C:\\\\Suwi\\\\Projects\\\\pos-rubber\" diff eacbff3..convex -- \"convex/schema.ts\")",
+      "Bash(git -C \"C:\\\\Suwi\\\\Projects\\\\pos-rubber\" log --all --oneline --grep=\"migration\\\\|seed\\\\|data\")",
+      "Bash(git -C \"C:\\\\Suwi\\\\Projects\\\\pos-rubber\" log --oneline --all -- convex/schema.ts)"
     ]
   }
 }

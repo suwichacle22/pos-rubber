@@ -1,24 +1,18 @@
-import { db } from "@/db";
-import {
-	products,
-	farmers,
-	employees,
-	transactionGroups,
-	transactionLines,
-} from "@/db/schema";
-import { asc, eq } from "drizzle-orm";
-import type {
-	TransactionGroupNewType,
-	TransactionNewLineType,
-	TransactionGroupLinesType,
-} from "./transaction.schema";
 import {
 	printer as ThermalPrinter,
 	types as PrinterTypes,
 } from "node-thermal-printer";
-import { formatDateThai, summaryTransactionText } from "./utils";
+import type { FunctionReturnType } from "convex/server";
+import type { api } from "convex/_generated/api";
+import {
+	formatDateThaiConvex,
+	summaryTransactionTextFromConvex,
+} from "./utils";
 
-// --- Print types ---
+/** Return type from Convex action getPrintSummaryData — use for printing */
+export type PrintSummaryData = FunctionReturnType<
+	typeof api.transactions.actions.getPrintSummaryData
+>;
 
 /** Params for printing receipt header (farmer name, date, product, summary) */
 export interface PrintReceiptHeaderParams {
@@ -39,147 +33,27 @@ export interface PrintSplitSectionParams {
 	isTransportationFee: boolean;
 }
 
-export async function getProductsDB() {
-	return await db.query.products.findMany();
-}
-
-export async function getProductsFormDB() {
-	return await db
-		.select({ label: products.productName, value: products.productId })
-		.from(products)
-		.orderBy(asc(products.createdAt));
-}
-
-export async function addFarmerDB(data: {
-	displayName: string;
-	phone: string | null;
-}) {
-	const [farmer] = await db
-		.insert(farmers)
-		.values({
-			displayName: data.displayName,
-			phone: data.phone,
-		})
-		.returning();
-	return farmer;
-}
-
-export async function getFarmersDB() {
-	return await db.query.farmers.findMany({ with: { employees: true } });
-}
-
-export async function getFarmersFormDB() {
-	return await db
-		.select({ label: farmers.displayName, value: farmers.farmerId })
-		.from(farmers)
-		.orderBy(asc(farmers.createdAt));
-}
-
-export async function addEmployeeDB(data: {
-	farmerId: string;
-	displayName: string;
-	address: string | null;
-	phone: string | null;
-}) {
-	const [employee] = await db
-		.insert(employees)
-		.values({
-			farmerId: data.farmerId,
-			displayName: data.displayName,
-			address: data.address,
-			phone: data.phone,
-		})
-		.returning();
-	return employee;
-}
-
-export async function getEmployeesDB() {
-	return await db.query.employees.findMany({
-		with: {
-			farmers: true,
-		},
-	});
-}
-
-export async function getEmployeesFormDB(farmerId: string) {
-	return await db
-		.select({ label: employees.displayName, value: employees.employeeId })
-		.from(employees)
-		.where(eq(employees.farmerId, farmerId))
-		.orderBy(asc(employees.createdAt));
-}
-
-export async function addTransactionGroupDB(data: TransactionGroupNewType) {
-	return await db
-		.insert(transactionGroups)
-		.values({
-			farmerId: data.farmerId,
-			groupName: data.groupName,
-			status: data.status,
-		})
-		.returning();
-}
-
-export async function addTransactionLinesDB(data: TransactionNewLineType) {
-	const newTransactionLines = await db
-		.insert(transactionLines)
-		.values(data)
-		.returning();
-	return newTransactionLines;
-}
-
-// export async function getTransactionGroupDB(transactionGroupId: string) {
-// 	return await db.query.transactionGroups.findFirst({
-// 		where: { transactionGroupId },
-// 		with: {
-// 			transactionLines: true,
-// 			products: true,
-// 			farmers: true,
-// 			employees: true,
-// 		},
-// 	});
-// }
-
-//print section
-//data: TransactionLineDBType
-let printer = new ThermalPrinter({
+const printer = new ThermalPrinter({
 	type: PrinterTypes.EPSON,
 	interface: "tcp://192.168.1.181",
 	width: 42,
 });
 
 /**
- * print all transaction lines in a group
- * @param transactionGroupID
- * @returns
+ * Print receipt — receives data from Convex action getPrintSummaryData.
+ * Implement your printing logic using transactionData.farmer, transactionData.lines, etc.
  */
-export async function printTransactionGroupDB(
-	transactionGroupID: string,
+export async function printReceipt(
+	transactionData: PrintSummaryData,
 ): Promise<
 	| { result: "print done" }
 	| { result: "print fail"; error: { message: string } }
 > {
-	const transactionGroup = await db.query.transactionGroups.findFirst({
-		where: { transactionGroupId: transactionGroupID },
-	});
-	if (!transactionGroup) {
-		throw Error("Transaction group not found");
-	}
-	const farmer = await db.query.farmers.findFirst({
-		where: { farmerId: transactionGroup.farmerId as string },
-	});
-	const transactionLines = await db.query.transactionLines.findMany({
-		where: { transactionGroupId: transactionGroupID },
-		orderBy: { transactionLineNo: "asc" },
-		with: {
-			employees: true,
-			products: true,
-		},
-	});
+	const { dateThai, time } = formatDateThaiConvex(
+		transactionData.transactionGroup._creationTime,
+	);
 
-	printer.setPrinterDriver(printer);
-	printer.setCharacterSet("TIS18_THAI");
-	for (const transactionLine of transactionLines) {
+	for (const line of transactionData.lines) {
 		const {
 			summaryCalculateText,
 			farmerAmountText,
@@ -190,38 +64,37 @@ export async function printTransactionGroupDB(
 			employeeCalculateTransportationFeeText,
 			employeeAmountTransportationFeeText,
 			employeeAllTransportationFeeText,
-		} = summaryTransactionText(transactionLine);
-		const { dateThai, time } = formatDateThai(
-			transactionLine.createdAt ?? new Date(),
-		);
-		//header
+			harvestRateText,
+			promotionRateText,
+			promotionAmountText,
+		} = summaryTransactionTextFromConvex(line);
+		//farmer
 		printer.println("ทรัพย์ทวี");
 		printer.println("โทร: 089-474-0467");
 		printer.println("เปิดทุกวัน 7.00 - 17.00 น.");
 		printer.println("------------------------------------------");
-		printer.println(`ชื่อ: ${farmer?.displayName}`);
+		printer.println(`ชื่อ: ${transactionData.farmer?.displayName}`);
 		printer.println(`วันที่และเวลา: ${dateThai} ${time}`);
-		printer.println(`สินค้า: ${transactionLine.products?.productName}`);
+		printer.println(`สินค้า: ${line.productName}`);
 		printer.println("------------------------------------------");
-		//header
-		if (transactionLine.isVehicle) {
-			printer.println(`ทะเบียนรถยนต์:    ${transactionLine.carLicense}`);
-			printer.println(`น้ำหนักรถยนต์เข้า:  ${transactionLine.weightVehicleIn}`);
-			printer.println(`น้ำหนักรถยนต์ออก:  ${transactionLine.weightVehicleOut}`);
-			printer.println(`น้ำหนักสินค้า:      ${transactionLine.weight}`);
+		if (line.isVehicle) {
+			printer.println(`ทะเบียนรถยนต์:    ${line.carLicense}`);
+			printer.println(`น้ำหนักรถยนต์เข้า:  ${line.weightVehicleIn}`);
+			printer.println(`น้ำหนักรถยนต์ออก:  ${line.weightVehicleOut}`);
+			printer.println(`น้ำหนักสินค้า:      ${line.weight}`);
 			printer.println(``);
 		}
 		printer.setTextSize(1, 1);
 		printer.println(summaryCalculateText);
 		printer.println("");
 		printer.println("");
-		if (transactionLine.isSplit !== "none") {
-			if (!transactionLine.isTransportationFee) {
+		if (line.isSplit !== "none") {
+			if (!line.isTransportationFee) {
 				printer.println(farmerAmountText);
 				printer.println("");
 				printer.setTextSize(0, 0);
 				printer.println(employeeAmountText);
-			} else if (transactionLine.isTransportationFee) {
+			} else if (line.isTransportationFee) {
 				printer.println(farmerCalculateTransportationFeeText);
 				printer.println(
 					`${" ".repeat(13)}${farmerAmountTransportationFeeText}`,
@@ -231,38 +104,22 @@ export async function printTransactionGroupDB(
 				printer.println(employeeAllTransportationFeeText);
 			}
 			printer.println("");
-			printer.println(`คนตัด: ${transactionLine.employees?.displayName}`);
+			printer.println(`คนตัด: ${line.employeeDisplayName}`);
 		}
-		if (transactionLine.isHarvestRate) {
-			printer.println(`อัตราค่าตัด: ${transactionLine.harvestRate}`);
-			printer.println(`ยอดค่าตัด: ${transactionLine.employeeAmount}`);
-		}
-		printer.partialCut();
-		// if (transactionLine.isSplit !== "none") {
-		// 	printer.println("ทรัพย์ทวี");
-		// 	printer.println("โทร: 089-474-0467");
-		// 	printer.println("เปิดทุกวัน 7.00 - 17.00 น.");
-		// 	printer.println("--------------");
-		// 	printer.println(`ชื่อ: ${farmer?.displayName}`);
-		// 	printer.println(
-		// 		`ใบเสร็จวันที่และเวลา: ${formatDateThai(transactionLine.createdAt ?? new Date()).dateThai} ${formatDateThai(transactionLine.createdAt ?? new Date()).time}`,
-		// 	);
-		// 	printer.println(`สินค้า: ${transactionLine.products?.productName}`);
-		// 	printer.println("--------------");
-		// 	//header
+		// Change to Summary
+		// if (line.isHarvestRate) {
+		// 	printer.println(`อัตราค่าตัด: ${harvestRateText}`);
+		// 	printer.println(`ยอดค่าตัด:  ${line.employeeAmount}`);
 		// 	printer.setTextSize(1, 1);
-		// 	printer.println(summaryCalculateText);
-		// 	printer.println(summaryTotalAmountText);
+		// 	printer.println(`เหลือ:     ${line.farmerAmount}`);
+		// 	printer.setTextSize(0, 0);
 		// 	printer.println("");
-		// 	printer.println(employeeAmountText);
-		// 	printer.println("");
-		// 	printer.println(`คนตัด: ${transactionLine.employees?.displayName}`);
-		// 	printer.cut();
+		// 	printer.println(`คนตัด: ${line.employeeDisplayName}`);
 		// }
+		printer.partialCut();
 	}
-
 	try {
-		let execute = await printer.execute();
+		await printer.execute();
 		return { result: "print done" };
 	} catch (e) {
 		return {

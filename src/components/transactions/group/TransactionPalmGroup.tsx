@@ -161,7 +161,7 @@ export const TransactionPalmGroup = withForm({
 												name="transactionPalmGroup.harvestRate"
 												validators={numericValidator}
 												listeners={{
-													onChangeDebounceMs: 300,
+													onChangeDebounceMs: 100,
 													onChange: ({ value }) => {
 														spreadHarvestRate(value ?? "");
 													},
@@ -180,11 +180,11 @@ export const TransactionPalmGroup = withForm({
 													}}
 													children={(field) => (
 														<field.SelectField
-															label="ให้ค่านำส่งกับ"
+															label="ให้ค่านำส่งแบบ"
 															orientation="vertical"
 															items={[
-																{ label: "เถ้าแก่", value: "farmer" },
-																{ label: "คนตัด", value: "employee" },
+																{ label: "รวม", value: "sum" },
+																{ label: "แบ่ง", value: "split" },
 															]}
 														/>
 													)}
@@ -193,7 +193,7 @@ export const TransactionPalmGroup = withForm({
 													name="transactionPalmGroup.promotionRate"
 													validators={numericValidator}
 													listeners={{
-														onChangeDebounceMs: 300,
+														onChangeDebounceMs: 100,
 														onChange: ({ value }) => {
 															spreadPromotionRate(value ?? "");
 														},

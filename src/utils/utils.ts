@@ -1,7 +1,9 @@
-import { TransactionLineDBType } from "./transactions.server";
+import type { Doc } from "../../convex/_generated/dataModel";
+import type { TransactionLineFormValues } from "./transaction.schema";
 import { format } from "date-fns";
 import moment from "moment";
 import { th, enUS } from "date-fns/locale";
+import type { PrintSummaryReturn } from "convex/transactions/actions";
 
 export function calculateTotalAmount(weight: string, price: string) {
 	const weightNum = parseFloat(weight);
@@ -157,7 +159,7 @@ export function formatRatioPalm(value: string) {
 	return ratio.toFixed(0).toString();
 }
 
-export function summaryTransactionText(data: TransactionLineDBType) {
+export function summaryTransactionText(data: TransactionLineFormValues) {
 	const {
 		weight,
 		price,
@@ -212,6 +214,76 @@ export function summaryTransactionText(data: TransactionLineDBType) {
 	};
 }
 
+const toStr = (v: number | undefined): string => String(v ?? "");
+
+/** Same output as summaryTransactionText but accepts Convex transaction line doc (numbers instead of form strings) */
+export function summaryTransactionTextFromConvex(
+	data: PrintSummaryReturn["lines"][number],
+) {
+	const {
+		weight,
+		price,
+		totalAmount,
+		farmerAmount,
+		farmerRatio,
+		transportationFeeFarmerAmount,
+		employeeAmount,
+		employeeRatio,
+		transportationFeeEmployeeAmount,
+		transportationFeeAmount,
+		harvestRate,
+		promotionRate,
+		promotionAmount,
+	} = data;
+
+	const formatWeight = formatNumber(toStr(weight));
+	const formatPrice = formatNumber(toStr(price));
+	const formatTotalAmount = formatNumber(toStr(totalAmount));
+	const formatFarmerRatio = formatRatio(toStr(farmerRatio));
+	const formatFarmerAmount = formatNumber(toStr(farmerAmount));
+	const formatEmployeeRatio = formatRatio(toStr(employeeRatio));
+	const formatEmployeeAmount = formatNumber(toStr(employeeAmount));
+	const formatTransportationFeeAmount = formatNumber(
+		toStr(transportationFeeAmount),
+	);
+	const formatTransportationFeeFarmerAmount = formatNumber(
+		toStr(transportationFeeFarmerAmount),
+	);
+	const formatTransportationFeeEmployeeAmount = formatNumber(
+		toStr(transportationFeeEmployeeAmount),
+	);
+	const formatHarvestRate = formatRatioPalm(toStr(harvestRate));
+	const formatPromotionRate = formatRatio(toStr(promotionRate));
+	const formatPromotionAmount = formatNumber(toStr(promotionAmount));
+
+	const summaryCalculateText = `${formatWeight} x ${formatPrice} = ${formatTotalAmount}`;
+	const farmerAmountText = `${formatFarmerRatio}:  ${formatFarmerAmount}`;
+	const employeeAmountText = `${formatEmployeeRatio}:  ${formatEmployeeAmount}`;
+	const farmerCalculateTransportationFeeText = `${formatFarmerRatio}: ${formatFarmerAmount} + ${formatTransportationFeeAmount} `;
+	const farmerAmountTransportationFeeText = `= ${formatTransportationFeeFarmerAmount}`;
+	const farmerAllTransportationFeeText = `${farmerCalculateTransportationFeeText} ${farmerAmountTransportationFeeText}`;
+	const employeeCalculateTransportationFeeText = `${formatEmployeeRatio}: ${formatEmployeeAmount} - ${formatTransportationFeeAmount} `;
+	const employeeAmountTransportationFeeText = `= ${formatTransportationFeeEmployeeAmount}`;
+	const employeeAllTransportationFeeText = `${employeeCalculateTransportationFeeText} ${employeeAmountTransportationFeeText}`;
+	const harvestRateText = `ตัน ${formatHarvestRate}`;
+	const promotionRateText = `อัตราค่านำส่ง: ${formatPromotionRate}`;
+	const promotionAmountText = `ยอดค่านำส่ง:  ${formatPromotionAmount}`;
+	return {
+		summaryCalculateText,
+		farmerAmountText,
+		employeeAmountText,
+		farmerCalculateTransportationFeeText,
+		farmerAmountTransportationFeeText,
+		farmerAllTransportationFeeText,
+		employeeCalculateTransportationFeeText,
+		employeeAmountTransportationFeeText,
+		employeeAllTransportationFeeText,
+		harvestRateText,
+		promotionRateText,
+		promotionAmountText,
+	};
+}
+
 const monthThai = {
 	"01": "มกราคม",
 	"02": "กุมภาพันธ์",
@@ -238,8 +310,8 @@ export const formatDateThai = (inputDate: Date) => {
 	return { dateThai, time };
 };
 
-export const formatDateThaiConvex = (inputDate: number): string => {
+export const formatDateThaiConvex = (inputDate: number) => {
 	const date = new Date(inputDate);
 	const { dateThai, time } = formatDateThai(date);
-	return `${dateThai} ${time}`;
+	return { dateThai, time };
 };

@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as transactions_actions from "../transactions/actions.js";
 import type * as transactions_mutations from "../transactions/mutations.js";
 import type * as transactions_queries from "../transactions/queries.js";
 
@@ -18,6 +19,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "transactions/actions": typeof transactions_actions;
   "transactions/mutations": typeof transactions_mutations;
   "transactions/queries": typeof transactions_queries;
 }>;

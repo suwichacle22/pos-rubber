@@ -1,34 +1,32 @@
 import {
+	convexLineToFormLine,
 	transactionFormOptions,
-	transactionFormSchema,
-	transactionGroupSchemaNew,
 	transactionLinesDefaultForm,
-	transactionLinesNewFormSchema,
+	convexUpdateTransactionLineSchema,
 } from "@/utils/transaction.schema";
+import { z } from "zod";
 import { useAppForm } from "../form/formContext";
 import { TransactionGroup } from "./group/TransactionGroup";
 import { SubmitButton } from "../form/component/SubmitButton";
-import { toast } from "sonner";
-import { TransactionLine } from "./lines/TransactionLinesNew";
+import { TransactionLine } from "./lines/TransactionLinesForm";
 import { Button } from "../ui/button";
-import {
-	useAddTransactionGroupNew,
-	useAddTransactionLinesNew,
-	useGetProductsForm,
-	usePrintTransactionGroup,
-} from "@/utils/transaction.hooks";
 import { PlusIcon } from "lucide-react";
 import { SubmitLoading } from "../form/component/SubmitLoading";
-import { calculateTransactionTotalNetAmount } from "@/utils/utils";
-import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
 import TransactionSummary from "./group/TransactionSummary";
 import { TransactionPalmGroup } from "./group/TransactionPalmGroup";
 import { api } from "convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
+import type { Id } from "convex/_generated/dataModel";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
+import { getPrintTransactionGroupSummary } from "@/utils/transaction.functions";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 
 type FormMeta = {
-	submitAction: "SaveDraft" | "Submit" | null;
+	submitAction: "pending" | "submitted" | null;
 };
 
 const defaultMeta: FormMeta = {
@@ -36,86 +34,144 @@ const defaultMeta: FormMeta = {
 };
 
 export function TransactionMainFormNew({ groupId }: { groupId: string }) {
+	const { data: transactionData } = useSuspenseQuery(
+		convexQuery(api.transactions.queries.getTransactionGroupwithLinesById, {
+			groupId: groupId as Id<"transactionGroups">,
+		}),
+	);
 	const navigate = useNavigate();
 	const productsFormData = useQuery(api.transactions.queries.getProductForm);
 	const palmProductIds = useQuery(api.transactions.queries.getProductPalmIds);
 	const addTrasactionLine = useMutation(
 		api.transactions.mutations.addTransactionLine,
 	);
+	const updateTransactionGroup = useMutation(
+		api.transactions.mutations.updateTransactionGroup,
+	);
+	const updateTransactionLine = useMutation(
+		api.transactions.mutations.updateTransactionLine,
+	);
+	const deleteTransactionLine = useMutation(
+		api.transactions.mutations.deleteTransactionLine,
+	);
+
+	const handleDeleteTransactionLine = async (
+		transactionLineId: string,
+		index: number,
+		removeFromForm: (index: number) => void,
+	) => {
+		if (transactionLineId) {
+			await deleteTransactionLine({
+				transactionLineId: transactionLineId as Id<"transactionLines">,
+			});
+		}
+		removeFromForm(index);
+	};
+
+	const printTransactionGroupSummary = useServerFn(
+		getPrintTransactionGroupSummary,
+	);
 	const form = useAppForm({
 		...transactionFormOptions,
+		defaultValues: {
+			transactionGroup: {
+				transactionGroupId:
+					(transactionData.transactionGroup?._id as string) ?? "",
+				groupName: transactionData.transactionGroup?.groupName ?? "",
+				farmerId: (transactionData.transactionGroup?.farmerId as string) ?? "",
+				status: transactionData.transactionGroup?.status ?? "pending",
+			},
+			transactionLines: (transactionData.transactionLines ?? []).map((line) =>
+				convexLineToFormLine(
+					line,
+					(transactionData.transactionGroup?._id as string) ?? "",
+				),
+			),
+			transactionPalmGroup: {
+				isHarvestRate: false,
+				employeeId: "",
+				harvestRate: "",
+				promotionRate: "",
+				promotionTo: "",
+				promotionAmount: "",
+				farmerPaidType: "cash",
+				employeePaidType: "cash",
+			},
+		},
+		listeners: {
+			onChangeDebounceMs: 500,
+			onChange: ({ formApi }) => {
+				if (formApi.state.isValid) {
+					formApi.handleSubmit();
+				}
+			},
+		},
+		validators: {
+			onSubmit: ({ formApi }) => {
+				if (!formApi.getFieldValue(`transactionGroup.farmerId`)) {
+					return "กรุณาเลือกชื่อลูกค้าก่อน";
+				}
+			},
+		},
 		onSubmitMeta: defaultMeta,
-		// onSubmit: async ({ value, meta }) => {
-		// 	if (meta.submitAction === "SaveDraft") {
-		// 		const group = transactionGroupSchemaNew.parse(value.transactionGroup);
-		// 		group.status = "pending";
-		// 		const [groupData] = await addTransactionGroupNew.mutateAsync({
-		// 			data: group,
-		// 		});
-		// 		//line
-		// 		const initLines = value.transactionLines;
-		// 		const lineswithGroupID = initLines.map((line, index) => {
-		// 			return {
-		// 				...line,
-		// 				transactionGroupId: groupData.transactionGroupId,
-		// 				transactionLineNo: index + 1,
-		// 				totalNetAmount: calculateTransactionTotalNetAmount(
-		// 					line.totalAmount,
-		// 					line.promotionAmount,
-		// 				),
-		// 			};
-		// 		});
-		// 		const lines = transactionLinesNewFormSchema.parse(lineswithGroupID);
-		// 		await addTransactionLinesNew.mutateAsync({
-		// 			data: lines,
-		// 		});
+		onSubmit: async ({ value, meta }) => {
+			updateTransactionGroup({
+				transactionGroupId: transactionData.transactionGroup
+					?._id as Id<"transactionGroups">,
+				farmerId: value.transactionGroup.farmerId as Id<"farmers">,
+				groupName: value.transactionGroup.groupName,
+				status: value.transactionGroup.status,
+			});
+			const parsedLines = z
+				.array(convexUpdateTransactionLineSchema)
+				.parse(value.transactionLines);
+			await updateTransactionLine({
+				transactionLines: parsedLines,
+			});
+			if (meta.submitAction === "pending") {
+				navigate({ to: "/transactions" });
+			}
+			if (meta.submitAction === "submitted") {
+				// 1. Persist status and lines
+				await updateTransactionGroup({
+					transactionGroupId: transactionData.transactionGroup
+						?._id as Id<"transactionGroups">,
+					farmerId: value.transactionGroup.farmerId as Id<"farmers">,
+					groupName: value.transactionGroup.groupName,
+					status: "submitted",
+				});
+				const parsedLines = z
+					.array(convexUpdateTransactionLineSchema)
+					.parse(value.transactionLines);
+				const parsedLinesNet = parsedLines.map((line) => {
+					if (line.promotionRate && line.totalAmount && line.promotionAmount) {
+						const totalNetAmount = line.totalAmount + line.promotionAmount;
+						return { ...line, totalNetAmount: totalNetAmount };
+					}
+					return line;
+				});
+				await updateTransactionLine({
+					transactionLines: parsedLinesNet,
+				});
+				// 2. Print receipt via Convex action + local printer
+				await printTransactionGroupSummary({
+					data: {
+						transactionGroupId: value.transactionGroup.transactionGroupId,
+					},
+				});
 
-		// 		form.reset();
-		// 		navigate({ to: `/transaction/${groupData.transactionGroupId}` });
-		// 	}
-		// 	if (meta.submitAction === "Submit") {
-		// 		const group = transactionGroupSchemaNew.parse(value.transactionGroup);
-		// 		group.status = "submitted";
-		// 		const [groupData] = await addTransactionGroupNew.mutateAsync({
-		// 			data: group,
-		// 		});
-
-		// 		//line
-		// 		const initLines = value.transactionLines;
-		// 		const lineswithGroupID = initLines.map((line, index) => {
-		// 			return {
-		// 				...line,
-		// 				transactionGroupId: groupData.transactionGroupId,
-		// 				transactionLineNo: index + 1,
-		// 				totalNetAmount: calculateTransactionTotalNetAmount(
-		// 					line.totalAmount,
-		// 					line.promotionAmount,
-		// 				),
-		// 			};
-		// 		});
-		// 		const lines = transactionLinesNewFormSchema.parse(lineswithGroupID);
-		// 		await addTransactionLinesNew.mutateAsync({
-		// 			data: lines,
-		// 		});
-
-		// 		await printTransactionGroup.mutateAsync({
-		// 			data: { transactionGroupID: groupData.transactionGroupId },
-		// 		});
-
-		// 		form.reset();
-		// 		navigate({ to: "/" });
-		// 	}
-
-		// 	toast.success("สำเร็จ", {
-		// 		description:
-		// 			meta.submitAction === "SaveDraft" ? "บันทึกแบบร่างสำเร็จ" : "บันทึกสำเร็จ",
-		// 	});
-		// },
+				toast.success("สำเร็จ", {
+					description: "รายการเสร็จสิ้น",
+				});
+				navigate({ to: "/transactions" });
+			}
+		},
 	});
 	const LinesData = useStore(
 		form.store,
 		(state) => state.values.transactionLines,
 	);
+
 	return (
 		<div className="flex flex-col gap-4 justify-center items-center p-4">
 			<form
@@ -137,17 +193,34 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 												key={index}
 												form={form}
 												index={index}
-												onDelete={(index) => field.removeValue(index)}
 												selectProductsData={productsFormData || []}
+												handleDeleteTransactionLine={(id) =>
+													handleDeleteTransactionLine(
+														id,
+														index,
+														field.removeValue,
+													)
+												}
 											/>
 										);
 									})}
 									<Button
 										type="button"
 										variant="secondary"
-										onClick={() =>
-											field.pushValue(transactionLinesDefaultForm())
-										}
+										onClick={async () => {
+											const newLineId = await addTrasactionLine({
+												transactionGroupId: transactionData.transactionGroup
+													?._id as Id<"transactionGroups">,
+											});
+											field.pushValue(
+												transactionLinesDefaultForm({
+													transactionGroupId:
+														(transactionData.transactionGroup?._id as string) ??
+														"",
+													transactionLinesId: newLineId as string,
+												}),
+											);
+										}}
 									>
 										<PlusIcon />
 										เพิ่มรายการ
@@ -166,15 +239,16 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 								label="บันทึกแบบร่าง"
 								variant={"outline"}
 								handleSubmit={() => {
-									form.handleSubmit({ submitAction: "SaveDraft" });
+									form.handleSubmit({ submitAction: "pending" });
 								}}
 							/>
 						</form.AppForm>
 
 						<form.AppForm>
 							<SubmitButton
+								label="จ่ายแล้ว (พิมพ์ใบเสร็จ)"
 								handleSubmit={() => {
-									form.handleSubmit({ submitAction: "Submit" });
+									form.handleSubmit({ submitAction: "submitted" });
 								}}
 							/>
 						</form.AppForm>

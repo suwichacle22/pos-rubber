@@ -23,9 +23,14 @@ export const TransactionLine = withForm({
 	props: {
 		index: 0,
 		selectProductsData: [{ label: "ไม่มีข้อมูล", value: "" }],
-		onDelete: (index: number) => {},
+		handleDeleteTransactionLine: (id: string) => {},
 	},
-	render: function Render({ form, index, selectProductsData, onDelete }) {
+	render: function Render({
+		form,
+		index,
+		selectProductsData,
+		handleDeleteTransactionLine,
+	}) {
 		const productPalmId = useQuery(api.transactions.queries.getProductPalmIds);
 		return (
 			<Card>
@@ -35,7 +40,13 @@ export const TransactionLine = withForm({
 						<Button
 							variant="outline"
 							size="icon"
-							onClick={() => onDelete(index)}
+							onClick={() =>
+								handleDeleteTransactionLine(
+									form.getFieldValue(
+										`transactionLines[${index}].transactionLinesId`,
+									),
+								)
+							}
 						>
 							<TrashIcon className="h-4 w-4" />
 						</Button>

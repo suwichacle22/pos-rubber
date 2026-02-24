@@ -25,7 +25,7 @@ export const TransactionLineHarvestRate = withForm({
 							<form.AppField
 								name={`transactionLines[${index}].isHarvestRate`}
 								listeners={{
-									onChangeDebounceMs: 300,
+									onChangeDebounceMs: 100,
 									onChange: ({ value }) => {
 										if (!value) {
 											form.setFieldValue(
@@ -63,7 +63,7 @@ export const TransactionLineHarvestRate = withForm({
 										name={`transactionLines[${index}].harvestRate`}
 										validators={numericValidator}
 										listeners={{
-											onChangeDebounceMs: 300,
+											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
 												const { farmerAmount, employeeAmount } =
 													calculateHarvestRateAmount(
@@ -141,61 +141,61 @@ export const TransactionLineHarvestRate = withForm({
 											/>
 										)}
 									/>
-									<form.AppField
-										name={`transactionLines[${index}].promotionTo`}
-										children={(field) => (
-											<field.SelectField
-												label="ให้ค่าตัดกับ"
-												orientation="vertical"
-												items={[
-													{ label: "เถ้าแก่", value: "farmer" },
-													{ label: "คนตัด", value: "employee" },
-												]}
-											/>
-										)}
-									/>
-									<form.AppField
-										name={`transactionLines[${index}].promotionRate`}
-										validators={numericValidator}
-										listeners={{
-											onChangeDebounceMs: 300,
-											onChange: ({ value }) => {
-												form.setFieldValue(
-													`transactionLines[${index}].promotionAmount`,
-													calculatePromotionAmount(
-														value,
-														form.getFieldValue(
-															`transactionLines[${index}].weight`,
-														),
-													),
-												);
-											},
-										}}
-										children={(field) => (
-											<field.NumericField
-												label="อัตราค่านำส่ง"
-												placeholder="0.1, 0.15"
-												orientation="vertical"
-											/>
-										)}
-									/>
-									<form.AppField
-										name={`transactionLines[${index}].promotionAmount`}
-										validators={numericValidator}
-										children={(field) => (
-											<field.NumericField
-												label="ยอดค่านำส่ง"
-												placeholder=""
-												disabled={true}
-												orientation="vertical"
-											/>
-										)}
-									/>
 								</div>
 							</>
 						)
 					}
 				/>
+				<div className="grid grid-cols-3 gap-2">
+					<form.AppField
+						name={`transactionLines[${index}].promotionTo`}
+						children={(field) => (
+							<field.SelectField
+								label="ให้ค่านำส่งแบบ"
+								orientation="vertical"
+								items={[
+									{ label: "รวม", value: "sum" },
+									{ label: "แบ่ง", value: "split" },
+								]}
+							/>
+						)}
+					/>
+					<form.AppField
+						name={`transactionLines[${index}].promotionRate`}
+						validators={numericValidator}
+						listeners={{
+							onChangeDebounceMs: 100,
+							onChange: ({ value }) => {
+								form.setFieldValue(
+									`transactionLines[${index}].promotionAmount`,
+									calculatePromotionAmount(
+										value,
+										form.getFieldValue(`transactionLines[${index}].weight`),
+									),
+								);
+							},
+						}}
+						children={(field) => (
+							<field.NumericField
+								label="อัตราค่านำส่ง"
+								placeholder="0.1, 0.15"
+								orientation="vertical"
+							/>
+						)}
+					/>
+					<form.AppField
+						name={`transactionLines[${index}].promotionAmount`}
+						validators={numericValidator}
+						children={(field) => (
+							<field.NumericField
+								label="ยอดค่านำส่ง"
+								placeholder=""
+								disabled={true}
+								orientation="vertical"
+							/>
+						)}
+					/>
+				</div>
 			</FieldGroup>
 		);
 	},

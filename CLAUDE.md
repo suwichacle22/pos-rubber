@@ -36,8 +36,9 @@ The goal is to make the developer better at web development, not to do the work 
 ### Tech Stack
 
 - **Framework:** TanStack Start (monorepo)
-- **Backend:** tanstack start
-- **Database:** Drizzle ORM
+- **Backend:** Convex (serverless mutations/queries)
+- **Database:** Convex
+- **State sync:** @convex-dev/react-query
 - **UI Components:** shadcn
 - **Frontend:** React
 - **Hosting:** Synology NAS with containers
@@ -113,9 +114,10 @@ Farmer gets = Total - Harvester amount
 
 ### 9. Transaction Status
 
-- **draft:** Saved to DB with groupId, can edit freely, add more lines later
+- **pending:** Auto-saved to DB with groupId via auto-sync, can edit freely, add more lines later
 - **submitted:** Paid, can still edit (no history tracking)
-- Save draft creates record in DB → user can return and continue editing via groupId
+- All field changes auto-sync to Convex — no manual "save draft" needed
+- User can return and continue editing via groupId
 - Simple edit allowed — trust-based family system
 
 ### 10. Split Defaults (TODO: not yet implemented)
@@ -135,16 +137,19 @@ Farmer gets = Total - Harvester amount
 
 **Store in DB** (decision: memory is not a concern, easier to manage):
 
-- Total amount
-- Farmer split amount
-- Employee split amount
-- Promotion amount
-- Transportation fee amounts
+- Total amount (`totalAmount`)
+- Farmer split amount (`farmerAmount`)
+- Employee split amount (`employeeAmount`)
+- Promotion amount (`promotionAmount`)
+- Transportation fee amounts (`transportationFeeAmount`, `transportationFeeFarmerAmount`, `transportationFeeEmployeeAmount`)
+- Total net amount (`totalNetAmount`)
 
-**Calculated from (in frontend):**
+**Calculated in frontend from:**
 
 - weight, price, ratios, harvest_rate, transportation_fee, promotion
-- Values are auto-calculated in the form and saved alongside raw inputs
+- Values are auto-calculated in the form via field onChange listeners (300ms debounce per field)
+- Calculation cascade: weight/price → totalAmount → farmerAmount/employeeAmount → transportFee amounts
+- All calculated values auto-sync to Convex alongside raw inputs
 
 ---
 
@@ -169,12 +174,12 @@ Farmer gets = Total - Harvester amount
 10. Optional: transportation fee (only when split is active)
 11. For Palm: harvest rate checkbox (only when split is "none") → shows employee dropdown, harvest rate, promotion fields
     - Rubber split and Palm harvest rate are mutually exclusive by product type, no swapping expected
-12. Add line to group
+12. Click "Add line" → creates empty line in Convex (async, wait for server) → adds to form
 13. Repeat 3-12 for more lines
 14. View summary (calculated totals per person)
-15. Save as draft (creates in DB, can return to edit via groupId)
+15. All field changes auto-sync to Convex via onChange with 2000ms debounce (no manual save button)
 16. Preview/print invoice
-17. Submit when paid
+17. Submit when paid (explicit status change)
 
 **Invoice types:**
 
@@ -353,12 +358,12 @@ Split checkbox controls: employee dropdown visibility, split fields visibility
 Think about: form state, validation when hidden, default values
 ```
 
-### Calculated Display Values
+### Calculated Values — Stored in DB
 
-Total, split amounts shown but not stored
+All calculated values (totalAmount, farmerAmount, employeeAmount, promotionAmount, transportationFee amounts, totalNetAmount) are calculated in the frontend and stored in DB alongside raw inputs. Memory is not a concern, easier to manage.
 
 ```
-Think about: where to calculate (frontend vs API), rounding, consistency
+Think about: rounding, consistency, recalculation on edit
 ```
 
 ### Inline Entity Creation
@@ -368,6 +373,50 @@ Create farmer/employee without leaving transaction screen
 ```
 Think about: form state management, optimistic updates, error recovery
 ```
+
+### Auto-Sync Pattern (Transaction Form)
+
+- **Approach:** Form-level `listeners.onChange` with `onChangeDebounceMs: 2000` — every field change auto-saves to Convex
+- **No manual save button** for individual fields — auto-sync like Google Docs
+- **Group creation:** `createTransactionGroup` auto-generates first empty transaction line
+- **Calculation cascade:** weight → totalAmount → farmerAmount/employeeAmount → transportFee amounts (4 hops × 300ms = ~1200ms). The 2000ms debounce waits for cascade to settle before saving.
+- **onChange routing:** Parse `fieldApi.name` to determine what to save:
+  - `transactionGroup.*` → save group via `updateTransactionGroup`
+  - `transactionLines[i].*` → save that specific line (whole line object) via `updateTransactionLine`
+  - `transactionPalmGroup.*` → skip (UI-only, spreads to lines which trigger their own saves)
+- **Form is source of truth** — Convex query reactivity doesn't reset form after save (`defaultValues` only applies on mount)
+- **Add line:** async — create empty line in Convex first, wait for ID, then add to form
+- **Delete line:** call Convex `deleteTransactionLine` mutation then remove from form array
+
+### Form ↔ Convex Field Mapping
+
+**transactionGroup:**
+
+| Form field | Form type | Convex field | Convex type |
+|---|---|---|---|
+| transactionGroupId | string | _id | auto |
+| farmerId | string | farmerId | v.optional(v.id("farmers")) |
+| groupName | string | groupName | v.optional(v.string()) |
+| status | string | status | "pending" \| "submitted" |
+| — | — | submittedAt | v.optional(v.number()) — not in form yet |
+
+**transactionLines:**
+
+| Form field | Form type | Convex type | Conversion |
+|---|---|---|---|
+| transactionLinesId | string | _id (auto) | Maps to _id |
+| — | — | transactionGroupId | Not in form (relationship key) |
+| employeeId, productId | string | v.optional(v.id()) | "" → undefined, else cast to Id |
+| weight, price, totalAmount, all ratio/amount fields | string | v.optional(v.number()) | "" → undefined, else parseFloat |
+| isVehicle, isTransportationFee, isHarvestRate | boolean | v.optional(v.boolean()) | Pass through |
+| isSplit | string | v.optional(union) | Pass through |
+| farmerPaidType, employeePaidType | string | v.optional(paidType) | "" → undefined |
+| promotionTo | string | v.optional(promotionType) | "" → undefined |
+| carLicense | string | v.optional(v.string()) | "" → undefined |
+| totalNetAmount | string | v.optional(v.number()) | "" → undefined, else parseFloat |
+| — | — | carLicenseId | Not in form yet |
+
+**transactionPalmGroup:** UI-only (no DB table). Spreads values into individual transactionLines.
 
 ---
 
@@ -398,9 +447,9 @@ Think about: form state management, optimistic updates, error recovery
 When stuck, consider looking into:
 
 - **TanStack Start docs** — routing, server functions
-- **Drizzle ORM docs** — schema, queries, relations
+- **Convex docs** — schema, mutations, queries, reactive queries
 - **shadcn/ui** — component patterns
-- **React Hook Form or TanStack Form** — form state management
+- **TanStack Form docs** — form state management, listeners, onChange
 
 ---
 

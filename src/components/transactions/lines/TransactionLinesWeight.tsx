@@ -22,7 +22,7 @@ export const TransactionLineWeight = withForm({
 						name={`transactionLines[${index}].weight`}
 						validators={numericValidator}
 						listeners={{
-							onChangeDebounceMs: 300,
+							onChangeDebounceMs: 100,
 							onChange: ({ value }) => {
 								const price = form.getFieldValue(
 									`transactionLines[${index}].price`,
@@ -41,7 +41,7 @@ export const TransactionLineWeight = withForm({
 						name={`transactionLines[${index}].price`}
 						validators={numericValidator}
 						listeners={{
-							onChangeDebounceMs: 300,
+							onChangeDebounceMs: 100,
 							onChange: ({ value }) => {
 								const weight = form.getFieldValue(
 									`transactionLines[${index}].weight`,
@@ -58,7 +58,7 @@ export const TransactionLineWeight = withForm({
 						name={`transactionLines[${index}].totalAmount`}
 						validators={numericValidator}
 						listeners={{
-							onChangeDebounceMs: 300,
+							onChangeDebounceMs: 100,
 							onChange: ({ value }) => {
 								const farmerRatio = form.getFieldValue(
 									`transactionLines[${index}].farmerRatio`,

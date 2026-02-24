@@ -28,6 +28,7 @@ export default function Header() {
 		const newGroupId = await addTransactionGroup({
 			status: "pending",
 		});
+
 		navigate({ to: "/transaction/$groupId", params: { groupId: newGroupId } });
 	};
 	return (

@@ -1,16 +1,28 @@
-import { query } from "../_generated/server";
+import { internalQuery, query } from "../_generated/server";
 import { v } from "convex/values";
 import { asyncMap } from "convex-helpers";
 import { getManyFrom } from "convex-helpers/server/relationships";
-import { isSameDay } from "date-fns";
+import { Id } from "../_generated/dataModel";
 
 export const getFarmers = query({
+	args: {},
+	returns: v.any(),
 	handler: async ({ db }) => {
 		return await db.query("farmers").collect();
 	},
 });
 
+export const getFarmerById = query({
+	args: { farmerId: v.id("farmers") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		return await db.get("farmers", args.farmerId);
+	},
+});
+
 export const getFarmersForm = query({
+	args: {},
+	returns: v.any(),
 	handler: async ({ db }) => {
 		const farmers = await db.query("farmers").collect();
 		return farmers.map((farmer) => ({
@@ -21,6 +33,8 @@ export const getFarmersForm = query({
 });
 
 export const getFarmersWithEmployees = query({
+	args: {},
+	returns: v.any(),
 	handler: async ({ db }) => {
 		const farmers = await db.query("farmers").collect();
 		const result = await asyncMap(farmers, async (farmer) => {
@@ -38,6 +52,7 @@ export const getFarmersWithEmployees = query({
 
 export const getFarmersWithEmployeesById = query({
 	args: { farmerId: v.id("farmers") },
+	returns: v.any(),
 	handler: async ({ db }, args) => {
 		const farmer = await db.get(args.farmerId);
 		if (!farmer) {
@@ -55,6 +70,7 @@ export const getFarmersWithEmployeesById = query({
 
 export const getEmployeesByFarmerIdForm = query({
 	args: { farmerId: v.id("farmers") },
+	returns: v.any(),
 	handler: async ({ db }, args) => {
 		const employees = await getManyFrom(
 			db,
@@ -70,6 +86,8 @@ export const getEmployeesByFarmerIdForm = query({
 });
 
 export const getProductForm = query({
+	args: {},
+	returns: v.any(),
 	handler: async ({ db }) => {
 		const products = await db.query("products").collect();
 		return products.map((product) => ({
@@ -79,8 +97,25 @@ export const getProductForm = query({
 	},
 });
 
+export const getCarlicensesForm = query({
+	args: { farmerId: v.id("farmers") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		const carlicenses = await db
+			.query("carlicenses")
+			.withIndex("by_farmerId", (q) => q.eq("farmerId", args.farmerId))
+			.collect();
+		return carlicenses.map((carlicense) => ({
+			value: carlicense._id as string,
+			label: carlicense.licensePlate,
+		}));
+	},
+});
+
 /** Returns product IDs whose name contains "ปาล์ม" (Palm). Use for filtering palm lines in the form. */
 export const getProductPalmIds = query({
+	args: {},
+	returns: v.any(),
 	handler: async ({ db }) => {
 		const products = await db.query("products").collect();
 		return products.filter((product) => product.productName.includes("ปาล์ม"));
@@ -88,24 +123,24 @@ export const getProductPalmIds = query({
 });
 
 export const listProductsWithLatestPrice = query({
+	args: {},
+	returns: v.any(),
 	handler: async ({ db }) => {
 		const products = await db.query("products").collect();
 		const productsWithPrice = await asyncMap(products, async (product) => {
-			const prices = await db
+			const sortedPrices = await db
 				.query("productPrices")
-				.withIndex("by_product", (q) => q.eq("productId", product._id))
-				.collect();
+				.withIndex("by_productId", (q) => q.eq("productId", product._id))
+				.order("desc")
+				.take(5);
 
-			const sortedPrices = prices.sort(
-				(a, b) => b._creationTime - a._creationTime,
-			);
 			const latest = sortedPrices[0] ?? null;
 
 			return {
 				...product,
 				latestPrice: latest?.price ?? null,
 				latestPriceAt: latest?._creationTime ?? null,
-				priceHistory: sortedPrices.slice(0, 5),
+				priceHistory: sortedPrices,
 			};
 		});
 
@@ -114,6 +149,8 @@ export const listProductsWithLatestPrice = query({
 });
 
 export const getTransactionGroup = query({
+	args: {},
+	returns: v.any(),
 	handler: async ({ db }) => {
 		const transactionGroups = await db
 			.query("transactionGroups")
@@ -125,6 +162,8 @@ export const getTransactionGroup = query({
 });
 
 export const getPendingTransactionGroup = query({
+	args: {},
+	returns: v.any(),
 	handler: async ({ db }) => {
 		const transactionGroups = await db
 			.query("transactionGroups")
@@ -138,6 +177,7 @@ export const getPendingTransactionGroup = query({
 
 export const getTransactionGroupById = query({
 	args: { groupId: v.id("transactionGroups") },
+	returns: v.any(),
 	handler: async ({ db }, args) => {
 		const transactionGroup = await db.get(args.groupId);
 		return transactionGroup;
@@ -146,11 +186,150 @@ export const getTransactionGroupById = query({
 
 export const getTransactionLinesByGroupId = query({
 	args: { groupId: v.id("transactionGroups") },
+	returns: v.any(),
 	handler: async ({ db }, args) => {
 		const transactionLines = await db
 			.query("transactionLines")
-			.withIndex("by_group", (q) => q.eq("transactionGroupId", args.groupId))
+			.withIndex("by_transactionGroupId", (q) =>
+				q.eq("transactionGroupId", args.groupId),
+			)
 			.collect();
 		return transactionLines;
+	},
+});
+
+export const getTransactionGroupwithLinesById = query({
+	args: { groupId: v.id("transactionGroups") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		const transactionGroup = await db.get(args.groupId);
+		if (!transactionGroup) {
+			throw new Error("Transaction group not found");
+		}
+		const transactionLines = await db
+			.query("transactionLines")
+			.withIndex("by_transactionGroupId", (q) =>
+				q.eq("transactionGroupId", args.groupId),
+			)
+			.collect();
+		return { transactionGroup, transactionLines };
+	},
+});
+
+export const getTransactionLineById = query({
+	args: { lineId: v.id("transactionLines") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		const transactionLine = await db.get("transactionLines", args.lineId);
+		return transactionLine;
+	},
+});
+
+/** Get product by ID for print actions */
+export const getProductById = query({
+	args: { productId: v.id("products") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		return await db.get("products", args.productId);
+	},
+});
+
+/** Get employee by ID for print actions */
+export const getEmployeeById = query({
+	args: { employeeId: v.id("employees") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		return await db.get("employees", args.employeeId);
+	},
+});
+
+/** Get car license by ID for print actions */
+export const getCarlicenseById = query({
+	args: { carlicenseId: v.id("carlicenses") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		return await db.get("carlicenses", args.carlicenseId);
+	},
+});
+
+// print section
+
+export const readGroupLines = internalQuery({
+	args: { transactionGroupId: v.id("transactionGroups") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		const transactionLines = await db
+			.query("transactionLines")
+			.withIndex("by_transactionGroupId", (q) =>
+				q.eq("transactionGroupId", args.transactionGroupId),
+			)
+			.collect();
+
+		return transactionLines;
+	},
+});
+
+// dashboard section
+
+export const getDailySummary = query({
+	args: { date: v.string() },
+	returns: v.any(),
+	handler: async ({ db }, { date }) => {
+		const [year, month, day] = date.split("-").map(Number);
+		// Thailand UTC+7: subtract 7 hours from local midnight to get UTC ms
+		const startOfDay =
+			Date.UTC(year, month - 1, day, 0, 0, 0, 0) - 7 * 60 * 60 * 1000;
+		const endOfDay =
+			Date.UTC(year, month - 1, day, 23, 59, 59, 999) - 7 * 60 * 60 * 1000;
+
+		const allLines = await db.query("transactionLines").collect();
+		const linesInRange = allLines.filter(
+			(line) =>
+				line._creationTime >= startOfDay &&
+				line._creationTime <= endOfDay &&
+				line.productId,
+		);
+
+		const groupMap = new Map<
+			string,
+			{
+				totalWeight: number;
+				priceSum: number;
+				priceCount: number;
+				totalAmount: number;
+			}
+		>();
+
+		for (const line of linesInRange) {
+			const pid = line.productId as string;
+			const existing = groupMap.get(pid) ?? {
+				totalWeight: 0,
+				priceSum: 0,
+				priceCount: 0,
+				totalAmount: 0,
+			};
+			existing.totalWeight += line.weight ?? 0;
+			if (line.price != null) {
+				existing.priceSum += line.price;
+				existing.priceCount += 1;
+			}
+			existing.totalAmount += line.totalAmount ?? 0;
+			groupMap.set(pid, existing);
+		}
+
+		const result = [];
+		for (const [productId, agg] of groupMap) {
+			const product = await db.get(productId as Id<"products">);
+			result.push({
+				productName: product?.productName ?? "Unknown",
+				totalWeight: String(agg.totalWeight),
+				averagePrice: String(
+					agg.priceCount > 0 ? agg.priceSum / agg.priceCount : 0,
+				),
+				totalAmount: String(agg.totalAmount),
+			});
+		}
+
+		return result;
 	},
 });

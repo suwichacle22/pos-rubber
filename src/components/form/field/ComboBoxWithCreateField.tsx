@@ -26,8 +26,10 @@ export function ComboBoxWithCreateField<TValue extends string = string>({
 	placeholder = "โปรดเลือก",
 	emptyMessage = "ไม่มีข้อมูล",
 	orientation = "vertical",
+	isDisabled = false,
 }: {
 	label: string;
+	isDisabled?: boolean;
 	handleCreate: (label: string) => Promise<{
 		newValue: Id<any> | string;
 		newLabel: string | undefined;
@@ -76,6 +78,7 @@ export function ComboBoxWithCreateField<TValue extends string = string>({
 			<Field>
 				<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
 				<Combobox
+					disabled={isDisabled}
 					items={itemsForView}
 					inputValue={query}
 					onInputValueChange={setQuery}
@@ -97,7 +100,7 @@ export function ComboBoxWithCreateField<TValue extends string = string>({
 						setQuery(selectedItems.label ?? "");
 					}}
 				>
-					<ComboboxInput placeholder={placeholder} />
+					<ComboboxInput placeholder={placeholder} disabled={isDisabled} />
 					<ComboboxContent>
 						<ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
 						<ComboboxList>

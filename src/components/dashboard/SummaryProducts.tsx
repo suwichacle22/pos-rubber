@@ -1,9 +1,13 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useGetDailySummary } from "@/utils/dashboard.hooks";
 import { formatNumber } from "@/utils/utils";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
+import { api } from "convex/_generated/api";
 
 export default function SummaryProducts({ date }: { date: string }) {
-	const { data, isLoading } = useGetDailySummary(date);
+	const { data, isLoading } = useQuery(
+		convexQuery(api.transactions.queries.getDailySummary, { date }),
+	);
 
 	return (
 		<Card className="">
@@ -17,7 +21,7 @@ export default function SummaryProducts({ date }: { date: string }) {
 					<p className="text-muted-foreground">ไม่มีรายการในวันนี้</p>
 				) : (
 					<div className="space-y-2">
-						{data.map((row) => (
+						{data.map((row: any) => (
 							<div
 								key={row.productName}
 								className="flex items-center justify-between gap-4"

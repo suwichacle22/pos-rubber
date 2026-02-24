@@ -22,7 +22,7 @@ export const TransactionLineSplit = withForm({
 				<form.AppField
 					name={`transactionLines[${index}].isSplit`}
 					listeners={{
-						onChangeDebounceMs: 300,
+						onChangeDebounceMs: 100,
 						onChange: ({ value }) => {
 							const totalAmount = form.getFieldValue(
 								`transactionLines[${index}].totalAmount`,
@@ -147,7 +147,7 @@ export const TransactionLineSplit = withForm({
 										name={`transactionLines[${index}].farmerRatio`}
 										validators={numericValidator}
 										listeners={{
-											onChangeDebounceMs: 300,
+											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
 												const employeeRatio = calculateSplitPercentage(value);
 												form.setFieldValue(
@@ -172,7 +172,7 @@ export const TransactionLineSplit = withForm({
 										name={`transactionLines[${index}].farmerAmount`}
 										validators={numericValidator}
 										listeners={{
-											onChangeDebounceMs: 300,
+											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
 												const { farmerTransportationFeeAmount } =
 													calculateTransportationFeeAmount(
@@ -214,7 +214,7 @@ export const TransactionLineSplit = withForm({
 										name={`transactionLines[${index}].employeeRatio`}
 										validators={numericValidator}
 										listeners={{
-											onChangeDebounceMs: 300,
+											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
 												const employeeAmount = calculateSplitAmount(
 													form.getFieldValue(
@@ -236,7 +236,7 @@ export const TransactionLineSplit = withForm({
 										name={`transactionLines[${index}].employeeAmount`}
 										validators={numericValidator}
 										listeners={{
-											onChangeDebounceMs: 300,
+											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
 												const { employeeTransportationFeeAmount } =
 													calculateTransportationFeeAmount(

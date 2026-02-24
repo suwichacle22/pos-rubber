@@ -3,6 +3,7 @@ import { v } from "convex/values";
 
 export const paidType = v.union(v.literal("cash"), v.literal("bank transfer"));
 export const customerType = v.union(v.literal("farmer"), v.literal("employee"));
+export const promotionType = v.union(v.literal("sum"), v.literal("split"));
 export const productSplitType = v.union(
 	v.literal("percentage"),
 	v.literal("per_kg"),
@@ -24,7 +25,7 @@ export default defineSchema({
 	farmers: defineTable({
 		displayName: v.string(),
 		phone: v.optional(v.string()),
-	}).index("by_display_name", ["displayName"]),
+	}).index("by_displayName", ["displayName"]),
 	employees: defineTable({
 		farmerId: v.id("farmers"),
 		displayName: v.string(),
@@ -32,14 +33,14 @@ export default defineSchema({
 		phone: v.optional(v.string()),
 	})
 		.index("by_farmerId", ["farmerId"])
-		.index("by_farmer_display_name", ["farmerId", "displayName"]),
+		.index("by_farmerId_and_displayName", ["farmerId", "displayName"]),
 	products: defineTable({
 		productName: v.string(),
-	}).index("by_product_name", ["productName"]),
+	}).index("by_productName", ["productName"]),
 	productPrices: defineTable({
 		productId: v.id("products"),
 		price: v.number(),
-	}).index("by_product", ["productId"]),
+	}).index("by_productId", ["productId"]),
 
 	splitDefaults: defineTable({
 		employeeId: v.id("employees"),
@@ -53,10 +54,10 @@ export default defineSchema({
 		createdAt: v.number(),
 		updatedAt: v.number(),
 	})
-		.index("by_employee", ["employeeId"])
-		.index("by_product", ["productId"])
-		.index("by_employee_product", ["employeeId", "productId"])
-		.index("by_created_at", ["createdAt"]),
+		.index("by_employeeId", ["employeeId"])
+		.index("by_productId", ["productId"])
+		.index("by_employeeId_and_productId", ["employeeId", "productId"])
+		.index("by_createdAt", ["createdAt"]),
 
 	transactionGroups: defineTable({
 		farmerId: v.optional(v.id("farmers")),
@@ -64,32 +65,18 @@ export default defineSchema({
 		status: transactionStatus,
 		submittedAt: v.optional(v.number()),
 	})
-		.index("by_farmer", ["farmerId"])
+		.index("by_farmerId", ["farmerId"])
 		.index("by_status", ["status"]),
 	carlicenses: defineTable({
 		farmerId: v.id("farmers"),
 		licensePlate: v.string(),
-		licensePlateNormalized: v.string(),
-		isActive: v.boolean(),
-		createdAt: v.number(),
-		updatedAt: v.number(),
-		lastUsedAt: v.optional(v.number()),
-	})
-		.index("by_farmer", ["farmerId"])
-		.index("by_farmer_license_normalized", [
-			"farmerId",
-			"licensePlateNormalized",
-		])
-		.index("by_license_normalized", ["licensePlateNormalized"])
-		.index("by_created_at", ["createdAt"]),
+	}).index("by_farmerId", ["farmerId"]),
 
 	transactionLines: defineTable({
-		transactionLineNo: v.number(),
 		transactionGroupId: v.id("transactionGroups"),
 		employeeId: v.optional(v.id("employees")),
 		productId: v.optional(v.id("products")),
 		isVehicle: v.optional(v.boolean()),
-		carLicense: v.optional(v.string()),
 		carLicenseId: v.optional(v.id("carlicenses")),
 		weightVehicleIn: v.optional(v.number()),
 		weightVehicleOut: v.optional(v.number()),
@@ -111,12 +98,11 @@ export default defineSchema({
 		isHarvestRate: v.optional(v.boolean()),
 		harvestRate: v.optional(v.number()),
 		promotionRate: v.optional(v.number()),
-		promotionTo: v.optional(customerType),
+		promotionTo: v.optional(promotionType),
 		promotionAmount: v.optional(v.number()),
 		totalNetAmount: v.optional(v.number()),
 	})
-		.index("by_group", ["transactionGroupId"])
-		.index("by_group_line_no", ["transactionGroupId", "transactionLineNo"])
-		.index("by_employee", ["employeeId"])
-		.index("by_product", ["productId"]),
+		.index("by_transactionGroupId", ["transactionGroupId"])
+		.index("by_employeeId", ["employeeId"])
+		.index("by_productId", ["productId"]),
 });
