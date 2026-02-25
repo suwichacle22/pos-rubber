@@ -4,11 +4,7 @@
   "typescript": true,
   "packageManager": "bun",
   "tailwind": true,
-  "addOnOptions": {
-    "drizzle": {
-      "database": "postgresql"
-    }
-  },
+  "addOnOptions": {},
   "git": true,
   "version": 1,
   "framework": "react-cra",
@@ -16,7 +12,6 @@
     "nitro",
     "start",
     "compiler",
-    "drizzle",
     "form",
     "shadcn",
     "tanstack-query",

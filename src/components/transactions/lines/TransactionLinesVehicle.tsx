@@ -5,11 +5,36 @@ import {
 	transactionFormOptions,
 } from "@/utils/transaction.schema";
 import { calculateVehicleWeight } from "@/utils/utils";
+import { useStore } from "@tanstack/react-store";
+import { api } from "convex/_generated/api";
+import { Id } from "convex/_generated/dataModel";
+import { useMutation, useQuery } from "convex/react";
 
 export const TransactionLineVehicle = withForm({
 	...transactionFormOptions,
 	props: { index: 0 },
 	render: function Render({ form, index }) {
+		const farmerId = useStore(
+			form.store,
+			(state) => state.values.transactionGroup.farmerId,
+		);
+		const carlicensesData = useQuery(
+			api.transactions.queries.getCarlicensesForm,
+			farmerId ? { farmerId: farmerId as Id<"farmers"> } : "skip",
+		);
+		const createCarlicense = useMutation(
+			api.transactions.mutations.createCarlicense,
+		);
+		const handleCarlicenseCreate = async (label: string) => {
+			const newCarlicense = await createCarlicense({
+				farmerId: farmerId as Id<"farmers">,
+				licensePlate: label,
+			});
+			return {
+				newValue: newCarlicense?._id as Id<"carlicenses">,
+				newLabel: newCarlicense?.licensePlate,
+			};
+		};
 		return (
 			<FieldGroup>
 				<form.AppField
@@ -22,11 +47,23 @@ export const TransactionLineVehicle = withForm({
 						isVehicle && (
 							<FieldGroup>
 								<form.AppField
-									name={`transactionLines[${index}].carLicense`}
+									name={`transactionLines[${index}].carLicenseId`}
+									validators={{
+										onSubmit: ({ value }) => {
+											if (!value) {
+												return "กรุณาใส่ทะเบียนรถ";
+											}
+											return;
+										},
+									}}
 									children={(field) => (
-										<field.TextField
+										<field.ComboBoxWithCreateField
 											label="ทะเบียนรถ"
+											handleCreate={handleCarlicenseCreate}
+											selectData={carlicensesData || []}
 											placeholder="กรอกทะเบียนรถ..."
+											orientation="vertical"
+											// isDisabled={true}
 										/>
 									)}
 								/>
@@ -35,7 +72,7 @@ export const TransactionLineVehicle = withForm({
 										name={`transactionLines[${index}].weightVehicleIn`}
 										validators={numericValidator}
 										listeners={{
-											onChangeDebounceMs: 300,
+											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
 												const inWeight = value;
 												const outWeight = form.getFieldValue(
@@ -59,7 +96,7 @@ export const TransactionLineVehicle = withForm({
 										name={`transactionLines[${index}].weightVehicleOut`}
 										validators={numericValidator}
 										listeners={{
-											onChangeDebounceMs: 300,
+											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
 												const inWeight = form.getFieldValue(
 													`transactionLines[${index}].weightVehicleIn`,

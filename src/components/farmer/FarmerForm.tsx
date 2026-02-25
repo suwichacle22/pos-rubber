@@ -1,4 +1,4 @@
-import { addFarmerSchema } from "@/utils/transaction.schema";
+import { useMutation } from "convex/react";
 import { SubmitButton } from "../form/component/SubmitButton";
 import { useAppForm } from "../form/formContext";
 import {
@@ -9,9 +9,10 @@ import {
 	CardFooter,
 } from "../ui/card";
 import { FieldGroup } from "../ui/field";
-import { useAddFarmer } from "@/utils/transaction.hooks";
-import { toast } from "sonner";
 import { z } from "zod";
+import { api } from "convex/_generated/api";
+import { toast } from "sonner";
+import { ConvexError } from "convex/values";
 
 const farmerFormSchema = z.object({
 	displayName: z.string("โปรดใส่ชื่อ").min(1),
@@ -19,25 +20,26 @@ const farmerFormSchema = z.object({
 });
 
 export function FarmerForm() {
-	const addFarmer = useAddFarmer();
+	const addFarmer = useMutation(api.transactions.mutations.createFarmer);
 	const form = useAppForm({
 		defaultValues: {
 			displayName: "",
 			phone: "",
 		},
 		validators: { onSubmit: farmerFormSchema },
-		onSubmit: ({ value }) => {
-			const transformValue = addFarmerSchema.parse(value);
-			addFarmer.mutateAsync(
-				{ data: transformValue },
-				{
-					onSuccess: () => form.reset(),
-					onError: (error) => toast.error(error.message),
-				},
-			);
+		onSubmit: async ({ value }) => {
+			const parsed = farmerFormSchema.parse(value);
+			try {
+				const newFarmer = await addFarmer(parsed);
+				form.reset();
+				toast.success("เพิ่มลูกค้าสำเร็จ", { description: newFarmer?.displayName });
+			} catch (error) {
+				toast.error(
+					error instanceof ConvexError ? error.message : String(error),
+				);
+			}
 		},
 	});
-
 	return (
 		<form
 			id="farmer-add-form"

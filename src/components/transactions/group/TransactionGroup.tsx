@@ -9,37 +9,33 @@ import {
 } from "@/components/ui/card";
 import { FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
-import { useAddFarmer, useGetFarmersForm } from "@/utils/transaction.hooks";
 import { transactionFormOptions } from "@/utils/transaction.schema";
+import { useQuery } from "convex/react";
+import { api } from "convex/_generated/api";
+import { useMutation } from "convex/react";
 import { toast } from "sonner";
+import { Id } from "convex/_generated/dataModel";
 
 export const TransactionGroup = withForm({
 	...transactionFormOptions,
 	render: function Render({ form }) {
-		const { data: farmersData = [], isLoading: isLoadingFarmers } =
-			useGetFarmersForm();
-		const addFarmer = useAddFarmer();
+		const farmersData = useQuery(api.transactions.queries.getFarmersForm);
+		const createFarmer = useMutation(api.transactions.mutations.createFarmer);
 
 		const handleFarmerCreate = async (label: string) => {
-			try {
-				const { farmerId, displayName } = await addFarmer.mutateAsync({
-					data: { displayName: label, phone: null },
-				});
-				toast.success(`สร้างลูกค้า "${label}" สำเร็จ`);
-				return {
-					newValue: farmerId,
-					newLabel: displayName,
-				};
-			} catch (error) {
-				toast.error(error instanceof Error ? error.message : "เกิดข้อผิดพลาด");
-				throw error;
-			}
+			const newFarmer = await createFarmer({
+				displayName: label,
+				phone: undefined,
+			});
+			return {
+				newValue: newFarmer?._id as Id<"farmers">,
+				newLabel: newFarmer?.displayName,
+			};
 		};
 		return (
-			<Card>
+			<Card className="">
 				<CardHeader>
 					<CardTitle>หัวบิล</CardTitle>
-					<CardAction>{isLoadingFarmers && <Spinner />}</CardAction>
 				</CardHeader>
 				<CardContent>
 					<FieldGroup>
@@ -57,7 +53,7 @@ export const TransactionGroup = withForm({
 								<field.ComboBoxWithCreateField
 									label="ชื่อลูกค้า"
 									handleCreate={handleFarmerCreate}
-									selectData={farmersData}
+									selectData={farmersData || []}
 									placeholder="กรอกชื่อลูกค้า..."
 									orientation="vertical"
 								/>

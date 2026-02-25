@@ -1,34 +1,26 @@
 import FarmerCard from "@/components/farmer/FarmerCard";
 import { FarmerForm } from "@/components/farmer/FarmerForm";
-import { EmployeeForm } from "@/components/employee/EmployeeForm";
-import { getFarmer } from "@/utils/transaction.functions";
 import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
+import { api } from "convex/_generated/api";
 
 export const Route = createFileRoute("/farmer")({
 	component: RouteComponent,
-	loader: async () => {
-		const farmers = await getFarmer();
-		return { farmers };
-	},
 });
 
 function RouteComponent() {
-	const { farmers } = Route.useLoaderData();
+	const { data: farmers } = useSuspenseQuery(
+		convexQuery(api.transactions.queries.getFarmersWithEmployees),
+	);
 	return (
-		<div className="flex flex-col items-center justify-center gap-4">
-			<div className="flex flex-col items-center justify-center gap-4 w-full max-w-2xl">
-				<FarmerForm />
-				<EmployeeForm />
-			</div>
-			<div className="flex flex-col gap-4 w-full max-w-2xl">
-				<div className="flex text-2xl font-bold justify-items-start items-start">
-					เกษตรกร
-				</div>
-				<div className="flex flex-col gap-2">
-					{farmers?.map((farmer) => (
-						<FarmerCard key={farmer.farmerId} farmerData={farmer} />
-					))}
-				</div>
+		<div className="flex flex-col gap-8 p-6 max-w-2xl mx-auto">
+			<FarmerForm />
+			<div className="text-2xl font-bold">เกษตรกร</div>
+			<div className="flex flex-col gap-4">
+				{farmers?.map((farmer) => (
+					<FarmerCard key={farmer._id} farmerData={farmer} />
+				))}
 			</div>
 		</div>
 	);

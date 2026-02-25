@@ -1,93 +1,56 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-	addProductSchema,
-	addFarmerSchema,
-	addEmployeeSchema,
-	transactionGroupSchemaNew,
-	transactionLinesNewFormSchema,
-} from "./transaction.schema";
-import {
-	addProductDB,
-	getProductsDB,
-	addFarmerDB,
-	getFarmersFormDB,
-	addEmployeeDB,
-	getEmployeesDB,
-	getProductsFormDB,
-	getFarmersDB,
-	getEmployeesFormDB,
-	addTransactionGroupDB,
-	addTransactionLinesDB,
-	printTransactionGroupDB,
-} from "./transactions.server";
 import z from "zod";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "convex/_generated/api";
+import type { Id } from "convex/_generated/dataModel";
+import { printReceipt, printSummaryOnly } from "./transactions.server";
 
-export const addProduct = createServerFn({ method: "POST" })
-	.inputValidator(addProductSchema)
+const getConvexUrl = (): string => {
+	const url = process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL;
+	if (!url) {
+		throw new Error(
+			"CONVEX_URL or VITE_CONVEX_URL must be set to call Convex from server",
+		);
+	}
+	return url;
+};
+
+export const getPrintTransactionGroupSummary = createServerFn({
+	method: "POST",
+})
+	.inputValidator(
+		z.object({
+			transactionGroupId: z.string().min(1),
+		}),
+	)
 	.handler(async ({ data }) => {
-		return await addProductDB(data);
+		const client = new ConvexHttpClient(getConvexUrl());
+
+		const transactionData = await client.action(
+			api.transactions.actions.getPrintSummaryData,
+			{
+				transactionGroupId: data.transactionGroupId as Id<"transactionGroups">,
+			},
+		);
+		return await printReceipt(transactionData);
 	});
 
-export const getProducts = createServerFn({ method: "GET" }).handler(
-	async () => {
-		return await getProductsDB();
-	},
-);
-
-export const getProductsForm = createServerFn({ method: "GET" }).handler(
-	async () => {
-		return await getProductsFormDB();
-	},
-);
-
-export const addFarmer = createServerFn({ method: "POST" })
-	.inputValidator(addFarmerSchema)
+export const getPrintTransactionGroupSummaryOnly = createServerFn({
+	method: "POST",
+})
+	.inputValidator(
+		z.object({
+			transactionGroupId: z.string().min(1),
+		}),
+	)
 	.handler(async ({ data }) => {
-		return await addFarmerDB(data);
-	});
+		const client = new ConvexHttpClient(getConvexUrl());
 
-export const getFarmer = createServerFn({ method: "GET" }).handler(async () => {
-	return await getFarmersDB();
-});
-
-export const getFarmersForm = createServerFn({ method: "GET" }).handler(
-	async () => {
-		return await getFarmersFormDB();
-	},
-);
-
-export const addEmployee = createServerFn({ method: "POST" })
-	.inputValidator(addEmployeeSchema)
-	.handler(async ({ data }) => {
-		return await addEmployeeDB(data);
-	});
-
-export const getEmployees = createServerFn({ method: "GET" }).handler(
-	async () => {
-		return await getEmployeesDB();
-	},
-);
-
-export const getEmployeesForm = createServerFn({ method: "GET" })
-	.inputValidator(z.object({ farmerId: z.string() }))
-	.handler(async ({ data }) => {
-		return await getEmployeesFormDB(data.farmerId);
-	});
-
-export const addTransactionGroupNew = createServerFn({ method: "POST" })
-	.inputValidator(transactionGroupSchemaNew)
-	.handler(async ({ data }) => {
-		return await addTransactionGroupDB(data);
-	});
-
-export const addTransactionLinesNew = createServerFn({ method: "POST" })
-	.inputValidator(transactionLinesNewFormSchema)
-	.handler(async ({ data }) => {
-		return await addTransactionLinesDB(data);
-	});
-
-export const printTransactionGroup = createServerFn({ method: "POST" })
-	.inputValidator(z.object({ transactionGroupID: z.string() }))
-	.handler(async ({ data }) => {
-		return await printTransactionGroupDB(data.transactionGroupID);
+		const transactionData = await client.action(
+			api.transactions.actions.getPrintSummaryData,
+			{
+				transactionGroupId: data.transactionGroupId as Id<"transactionGroups">,
+			},
+		);
+		return await printSummaryOnly(transactionData);
 	});

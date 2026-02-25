@@ -4,7 +4,7 @@ import {
 	numericValidator,
 	transactionFormOptions,
 } from "@/utils/transaction.schema";
-import { calculateSplitAmount, calculateTotalAmount } from "@/utils/utils";
+import { calculateSplitAmount, calculateTotalAmount, calculateTransactionTotalNetAmount } from "@/utils/utils";
 import { useStore } from "@tanstack/react-store";
 
 export const TransactionLineWeight = withForm({
@@ -22,7 +22,7 @@ export const TransactionLineWeight = withForm({
 						name={`transactionLines[${index}].weight`}
 						validators={numericValidator}
 						listeners={{
-							onChangeDebounceMs: 300,
+							onChangeDebounceMs: 100,
 							onChange: ({ value }) => {
 								const price = form.getFieldValue(
 									`transactionLines[${index}].price`,
@@ -41,7 +41,7 @@ export const TransactionLineWeight = withForm({
 						name={`transactionLines[${index}].price`}
 						validators={numericValidator}
 						listeners={{
-							onChangeDebounceMs: 300,
+							onChangeDebounceMs: 100,
 							onChange: ({ value }) => {
 								const weight = form.getFieldValue(
 									`transactionLines[${index}].weight`,
@@ -58,21 +58,47 @@ export const TransactionLineWeight = withForm({
 						name={`transactionLines[${index}].totalAmount`}
 						validators={numericValidator}
 						listeners={{
-							onChangeDebounceMs: 300,
+							onChangeDebounceMs: 100,
 							onChange: ({ value }) => {
-								const farmerRatio = form.getFieldValue(
-									`transactionLines[${index}].farmerRatio`,
+								const isSplit = form.getFieldValue(
+									`transactionLines[${index}].isSplit`,
 								);
-								const employeeRatio = form.getFieldValue(
-									`transactionLines[${index}].employeeRatio`,
+								const isHarvestRate = form.getFieldValue(
+									`transactionLines[${index}].isHarvestRate`,
+								);
+
+								if (isSplit === "none" && !isHarvestRate) {
+									form.setFieldValue(
+										`transactionLines[${index}].farmerAmount`,
+										value,
+									);
+									form.setFieldValue(
+										`transactionLines[${index}].employeeAmount`,
+										"",
+									);
+								} else {
+									const farmerRatio = form.getFieldValue(
+										`transactionLines[${index}].farmerRatio`,
+									);
+									const employeeRatio = form.getFieldValue(
+										`transactionLines[${index}].employeeRatio`,
+									);
+									form.setFieldValue(
+										`transactionLines[${index}].farmerAmount`,
+										calculateSplitAmount(value, farmerRatio),
+									);
+									form.setFieldValue(
+										`transactionLines[${index}].employeeAmount`,
+										calculateSplitAmount(value, employeeRatio),
+									);
+								}
+								// Always recalculate totalNetAmount
+								const promotionAmount = form.getFieldValue(
+									`transactionLines[${index}].promotionAmount`,
 								);
 								form.setFieldValue(
-									`transactionLines[${index}].farmerAmount`,
-									calculateSplitAmount(value, farmerRatio),
-								);
-								form.setFieldValue(
-									`transactionLines[${index}].employeeAmount`,
-									calculateSplitAmount(value, employeeRatio),
+									`transactionLines[${index}].totalNetAmount`,
+									calculateTransactionTotalNetAmount(value, promotionAmount || ""),
 								);
 							},
 						}}
@@ -86,9 +112,13 @@ export const TransactionLineWeight = withForm({
 					/>
 				</div>
 				<form.Subscribe
-					selector={(state) => state.values.transactionLines[index].isSplit}
-					children={(isSplit) =>
-						isSplit === "none" && (
+					selector={(state) => [
+						state.values.transactionLines[index].isSplit,
+						state.values.transactionLines[index].isHarvestRate,
+					]}
+					children={([isSplit, isHarvestRate]) =>
+						isSplit === "none" &&
+						isHarvestRate === false && (
 							<FieldGroup>
 								<form.AppField
 									name={`transactionLines[${index}].farmerPaidType`}

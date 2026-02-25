@@ -1,4 +1,5 @@
-import { addEmployeeSchema } from "@/utils/transaction.schema";
+import type { Id } from "convex/_generated/dataModel";
+import { addEmployeeInlineSchema } from "@/utils/transaction.schema";
 import { SubmitButton } from "../form/component/SubmitButton";
 import { useAppForm } from "../form/formContext";
 import {
@@ -9,29 +10,32 @@ import {
 	CardFooter,
 } from "../ui/card";
 import { FieldGroup } from "../ui/field";
-import { useAddEmployee, useGetFarmersForm } from "@/utils/transaction.hooks";
 import { toast } from "sonner";
+import { useMutation } from "convex/react";
+import { api } from "convex/_generated/api";
 
-export function EmployeeForm() {
-	const addEmployee = useAddEmployee();
-	const { data: farmers } = useGetFarmersForm();
+export function EmployeeForm({
+	farmerId,
+	onSuccess,
+}: {
+	farmerId: Id<"farmers">;
+	onSuccess?: () => void;
+}) {
+	const createEmployee = useMutation(api.transactions.mutations.createEmployee);
 	const form = useAppForm({
 		defaultValues: {
-			farmerId: "",
 			displayName: "",
-			address: "",
-			phone: "",
 		},
-		validators: { onSubmit: addEmployeeSchema },
-		onSubmit: ({ value }) => {
-			const transformValue = addEmployeeSchema.parse(value);
-			addEmployee.mutateAsync(
-				{ data: transformValue },
-				{
-					onSuccess: () => form.reset(),
-					onError: (error) => toast.error(error.message),
-				},
-			);
+		validators: { onSubmit: addEmployeeInlineSchema },
+		onSubmit: async ({ value }) => {
+			const parsed = addEmployeeInlineSchema.parse(value);
+			await createEmployee({
+				farmerId,
+				displayName: parsed.displayName,
+			});
+			toast.success("เพิ่มคนตัดสำเร็จ");
+			form.reset();
+			onSuccess?.();
 		},
 	});
 
@@ -43,53 +47,24 @@ export function EmployeeForm() {
 				form.handleSubmit();
 			}}
 		>
-			<Card className="min-w-[380px] md:min-w-[660px]">
-				<CardHeader>
-					<CardTitle>เพิ่มพนักงาน</CardTitle>
+			<Card className="border-dashed">
+				<CardHeader className="py-3">
+					<CardTitle className="text-base">เพิ่มคนตัด</CardTitle>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="py-3">
 					<FieldGroup>
-						<form.AppField
-							name="farmerId"
-							children={(field) => (
-								<field.SelectField
-									label="เกษตรกร"
-									items={
-										farmers?.map((farmer) => ({
-											label: farmer.displayName,
-											value: farmer.farmerId,
-										})) || []
-									}
-								/>
-							)}
-						/>
 						<form.AppField
 							name="displayName"
 							children={(field) => (
 								<field.TextField
-									label="ชื่อพนักงาน"
-									placeholder="กรอกชื่อพนักงาน..."
-								/>
-							)}
-						/>
-						<form.AppField
-							name="address"
-							children={(field) => (
-								<field.TextField label="ที่อยู่" placeholder="กรอกที่อยู่..." />
-							)}
-						/>
-						<form.AppField
-							name="phone"
-							children={(field) => (
-								<field.TextField
-									label="เบอร์โทรศัพท์"
-									placeholder="กรอกเบอร์โทรศัพท์..."
+									label="ชื่อคนตัด"
+									placeholder="กรอกชื่อคนตัด..."
 								/>
 							)}
 						/>
 					</FieldGroup>
 				</CardContent>
-				<CardFooter className="flex justify-end">
+				<CardFooter className="flex justify-end py-3">
 					<form.AppForm>
 						<SubmitButton />
 					</form.AppForm>

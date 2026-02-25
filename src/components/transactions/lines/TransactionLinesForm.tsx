@@ -15,15 +15,26 @@ import { Button } from "@/components/ui/button";
 import { TrashIcon } from "lucide-react";
 import { TransactionLineTransportFee } from "./TransactionLinesTransportFee";
 import { TransactionLineHarvestRate } from "./TransactionLinesHarvestRate";
+import { useQuery } from "convex/react";
+import { api } from "convex/_generated/api";
+import { config } from "@/utils/config";
+import { calculateTotalAmount } from "@/utils/utils";
 
 export const TransactionLine = withForm({
 	...transactionFormOptions,
 	props: {
 		index: 0,
 		selectProductsData: [{ label: "ไม่มีข้อมูล", value: "" }],
-		onDelete: (index: number) => {},
+		handleDeleteTransactionLine: (id: string) => {},
 	},
-	render: function Render({ form, index, selectProductsData, onDelete }) {
+	render: function Render({
+		form,
+		index,
+		selectProductsData,
+		handleDeleteTransactionLine,
+	}) {
+		const productPalmId = useQuery(api.transactions.queries.getProductPalmIds);
+		const latestPalmPrice = useQuery(api.transactions.queries.getLatestPalmPrice);
 		return (
 			<Card>
 				<CardHeader>
@@ -32,7 +43,13 @@ export const TransactionLine = withForm({
 						<Button
 							variant="outline"
 							size="icon"
-							onClick={() => onDelete(index)}
+							onClick={() =>
+								handleDeleteTransactionLine(
+									form.getFieldValue(
+										`transactionLines[${index}].transactionLinesId`,
+									),
+								)
+							}
 						>
 							<TrashIcon className="h-4 w-4" />
 						</Button>
@@ -50,6 +67,35 @@ export const TransactionLine = withForm({
 									return;
 								},
 							}}
+							listeners={{
+								onChange: ({ value }) => {
+									if (!value) return;
+									const isPalm = productPalmId?.some(
+										(p) => p._id === value,
+									);
+									if (!isPalm || latestPalmPrice == null) return;
+
+									const isPalmRuang =
+										value === config.product.palmRuangProductId;
+									const price = isPalmRuang
+										? (latestPalmPrice + 0.5).toString()
+										: latestPalmPrice.toString();
+
+									form.setFieldValue(
+										`transactionLines[${index}].price`,
+										price,
+									);
+
+									// Trigger calculation cascade
+									const weight = form.getFieldValue(
+										`transactionLines[${index}].weight`,
+									);
+									form.setFieldValue(
+										`transactionLines[${index}].totalAmount`,
+										calculateTotalAmount(weight, price),
+									);
+								},
+							}}
 							children={(field) => (
 								<field.ComboBoxField
 									label="สินค้า"
@@ -61,7 +107,18 @@ export const TransactionLine = withForm({
 						<TransactionLineWeight form={form} index={index} />
 						<TransactionLineSplit form={form} index={index} />
 						<TransactionLineTransportFee form={form} index={index} />
-						<TransactionLineHarvestRate form={form} index={index} />
+						<form.Subscribe
+							selector={(state) =>
+								state.values.transactionLines[index].productId
+							}
+							children={(productId) => {
+								return (
+									productPalmId?.some(
+										(product) => product._id === productId,
+									) && <TransactionLineHarvestRate form={form} index={index} />
+								);
+							}}
+						/>
 					</FieldGroup>
 				</CardContent>
 			</Card>

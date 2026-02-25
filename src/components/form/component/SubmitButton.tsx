@@ -14,7 +14,7 @@ export function SubmitButton({
 	size?: VariantProps<typeof buttonVariants>["size"];
 	variant?: VariantProps<typeof buttonVariants>["variant"];
 	className?: string;
-	handleSubmit: () => void;
+	handleSubmit?: () => void;
 }) {
 	const form = useFormContext();
 	return (

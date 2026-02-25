@@ -1,5 +1,6 @@
 import {
 	HeadContent,
+	Navigate,
 	Outlet,
 	Scripts,
 	createRootRouteWithContext,
@@ -46,7 +47,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	}),
 
 	shellComponent: RootDocument,
+	notFoundComponent: NotFound,
 });
+
+function NotFound() {
+	return <Navigate to="/" />;
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (

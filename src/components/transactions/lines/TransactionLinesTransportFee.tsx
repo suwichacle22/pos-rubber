@@ -21,7 +21,7 @@ export const TransactionLineTransportFee = withForm({
 						isSplit !== "none" && (
 							<form.AppField
 								listeners={{
-									onChangeDebounceMs: 300,
+									onChangeDebounceMs: 100,
 									onChange: ({ value }) => {
 										if (!value) {
 											form.setFieldValue(
@@ -57,7 +57,7 @@ export const TransactionLineTransportFee = withForm({
 										name={`transactionLines[${index}].transportationFee`}
 										validators={numericValidator}
 										listeners={{
-											onChangeDebounceMs: 300,
+											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
 												const {
 													transportationFeeAmount,
