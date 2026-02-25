@@ -4,7 +4,7 @@ import {
 	numericValidator,
 	transactionFormOptions,
 } from "@/utils/transaction.schema";
-import { calculateSplitAmount, calculateTotalAmount } from "@/utils/utils";
+import { calculateSplitAmount, calculateTotalAmount, calculateTransactionTotalNetAmount } from "@/utils/utils";
 import { useStore } from "@tanstack/react-store";
 
 export const TransactionLineWeight = withForm({
@@ -92,6 +92,14 @@ export const TransactionLineWeight = withForm({
 										calculateSplitAmount(value, employeeRatio),
 									);
 								}
+								// Always recalculate totalNetAmount
+								const promotionAmount = form.getFieldValue(
+									`transactionLines[${index}].promotionAmount`,
+								);
+								form.setFieldValue(
+									`transactionLines[${index}].totalNetAmount`,
+									calculateTransactionTotalNetAmount(value, promotionAmount || ""),
+								);
 							},
 						}}
 						children={(field) => (

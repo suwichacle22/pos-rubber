@@ -295,6 +295,7 @@ export const getAllTransactionLinesWithDetails = query({
 				weight: line.weight ?? null,
 				price: line.price ?? null,
 				totalAmount: line.totalAmount ?? null,
+				totalNetAmount: line.totalNetAmount ?? null,
 			};
 		});
 
@@ -307,15 +308,16 @@ export const getAllTransactionLinesWithDetails = query({
 // dashboard section
 
 export const getDailySummary = query({
-	args: { date: v.string() },
+	args: { startDate: v.string(), endDate: v.string() },
 	returns: v.any(),
-	handler: async ({ db }, { date }) => {
-		const [year, month, day] = date.split("-").map(Number);
+	handler: async ({ db }, { startDate, endDate }) => {
+		const [sYear, sMonth, sDay] = startDate.split("-").map(Number);
+		const [eYear, eMonth, eDay] = endDate.split("-").map(Number);
 		// Thailand UTC+7: subtract 7 hours from local midnight to get UTC ms
 		const startOfDay =
-			Date.UTC(year, month - 1, day, 0, 0, 0, 0) - 7 * 60 * 60 * 1000;
+			Date.UTC(sYear, sMonth - 1, sDay, 0, 0, 0, 0) - 7 * 60 * 60 * 1000;
 		const endOfDay =
-			Date.UTC(year, month - 1, day, 23, 59, 59, 999) - 7 * 60 * 60 * 1000;
+			Date.UTC(eYear, eMonth - 1, eDay, 23, 59, 59, 999) - 7 * 60 * 60 * 1000;
 
 		const allLines = await db.query("transactionLines").collect();
 		const linesInRange = allLines.filter(

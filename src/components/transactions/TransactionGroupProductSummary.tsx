@@ -21,7 +21,7 @@ export default function TransactionGroupProductSummary({
 
 	const productGroups = new Map<
 		string,
-		{ productName: string; totalWeight: number; price: number; totalAmount: number }
+		{ productName: string; totalWeight: number; totalAmount: number }
 	>();
 
 	for (const line of lines) {
@@ -30,12 +30,10 @@ export default function TransactionGroupProductSummary({
 		const existing = productGroups.get(line.productId) ?? {
 			productName: name,
 			totalWeight: 0,
-			price: 0,
 			totalAmount: 0,
 		};
 		existing.totalWeight += line.weight ?? 0;
-		existing.price = line.price ?? 0;
-		existing.totalAmount += line.totalAmount ?? 0;
+		existing.totalAmount += line.totalNetAmount ?? line.totalAmount ?? 0;
 		productGroups.set(line.productId, existing);
 	}
 
@@ -56,7 +54,11 @@ export default function TransactionGroupProductSummary({
 				<div key={productId} className="flex justify-between text-sm">
 					<span className="text-muted-foreground">{agg.productName}</span>
 					<span>
-						{agg.totalWeight} x {agg.price} = {agg.totalAmount}
+						{agg.totalWeight} x{" "}
+						{agg.totalWeight > 0
+							? (agg.totalAmount / agg.totalWeight).toFixed(2)
+							: 0}{" "}
+						= {agg.totalAmount}
 					</span>
 				</div>
 			))}

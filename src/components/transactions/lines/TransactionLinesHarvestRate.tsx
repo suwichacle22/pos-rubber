@@ -9,6 +9,7 @@ import {
 	calculatePromotionAmount,
 	calculateSplitAmount,
 	calculateTransportationFeeAmount,
+	calculateTransactionTotalNetAmount,
 } from "@/utils/utils";
 import { TransactionLinesEmployeeId } from "./TransactionLinesEmployeeId";
 
@@ -178,12 +179,20 @@ export const TransactionLineHarvestRate = withForm({
 						listeners={{
 							onChangeDebounceMs: 100,
 							onChange: ({ value }) => {
+								const newPromotionAmount = calculatePromotionAmount(
+									value,
+									form.getFieldValue(`transactionLines[${index}].weight`),
+								);
 								form.setFieldValue(
 									`transactionLines[${index}].promotionAmount`,
-									calculatePromotionAmount(
-										value,
-										form.getFieldValue(`transactionLines[${index}].weight`),
-									),
+									newPromotionAmount,
+								);
+								const totalAmount = form.getFieldValue(
+									`transactionLines[${index}].totalAmount`,
+								);
+								form.setFieldValue(
+									`transactionLines[${index}].totalNetAmount`,
+									calculateTransactionTotalNetAmount(totalAmount || "", newPromotionAmount),
 								);
 							},
 						}}

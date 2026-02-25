@@ -35,6 +35,7 @@ export type TransactionLineRow = {
 	weight: number | null;
 	price: number | null;
 	totalAmount: number | null;
+	totalNetAmount: number | null;
 };
 
 const columns: ColumnDef<TransactionLineRow>[] = [
@@ -97,10 +98,10 @@ const columns: ColumnDef<TransactionLineRow>[] = [
 		},
 	},
 	{
-		accessorKey: "totalAmount",
+		id: "totalNetAmount",
 		header: "ยอดรวม",
 		cell: ({ row }) => {
-			const val = row.getValue<number | null>("totalAmount");
+			const val = row.original.totalNetAmount ?? row.original.totalAmount;
 			return val != null ? val : "-";
 		},
 	},
@@ -135,7 +136,7 @@ export default function TransactionDataTable({
 		{ totalWeight: number; price: number; totalAmount: number }
 	>();
 	for (const row of summaryRows) {
-		const { productName, weight, price, totalAmount } = row.original;
+		const { productName, weight, price, totalAmount, totalNetAmount } = row.original;
 		if (!productName || productName === "-") continue;
 		const existing = productGroups.get(productName) ?? {
 			totalWeight: 0,
@@ -144,12 +145,14 @@ export default function TransactionDataTable({
 		};
 		existing.totalWeight += weight ?? 0;
 		existing.price = price ?? 0;
-		existing.totalAmount += totalAmount ?? 0;
+		existing.totalAmount += totalNetAmount ?? totalAmount ?? 0;
 		productGroups.set(productName, existing);
 	}
 
 	let grandTotal = 0;
 	for (const agg of productGroups.values()) {
+		// Calculate average price from totalAmount / totalWeight
+		agg.price = agg.totalWeight > 0 ? agg.totalAmount / agg.totalWeight : 0;
 		grandTotal += agg.totalAmount;
 	}
 

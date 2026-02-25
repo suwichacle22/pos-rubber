@@ -152,7 +152,9 @@ function printPromotionSummary(
 	// Use rate from first line (typically same for all palm lines in a group)
 	const rate = splitLines[0]?.promotionRate;
 	if (rate) {
-		p.println(`อัตราค่านำส่ง: ${rate * 100}`);
+		p.setTextSize(0, 0);
+		p.println(`อัตราค่านำส่ง: ${rate * 100} สตางค์`);
+		p.setTextSize(0, 0);
 	}
 	p.println(`น้ำหนักรวม:    ${totalWeight}`);
 	p.setTextSize(1, 1);
@@ -200,9 +202,15 @@ function printProductSummary(
 		};
 		existing.totalWeight += line.weight ?? 0;
 		existing.price = line.price ?? 0;
-		existing.totalAmount += line.totalAmount ?? 0;
-		existing.farmerAmount += line.farmerAmount ?? 0;
-		existing.employeeAmount += line.employeeAmount ?? 0;
+		existing.totalAmount += line.totalNetAmount ?? line.totalAmount ?? 0;
+		existing.farmerAmount +=
+			line.isTransportationFee && line.transportationFeeFarmerAmount
+				? line.transportationFeeFarmerAmount
+				: line.farmerAmount ?? 0;
+		existing.employeeAmount +=
+			line.isTransportationFee && line.transportationFeeEmployeeAmount
+				? line.transportationFeeEmployeeAmount
+				: line.employeeAmount ?? 0;
 		if (line.promotionTo === "sum") {
 			existing.promotionAmount += line.promotionAmount ?? 0;
 		}
@@ -216,6 +224,7 @@ function printProductSummary(
 
 	// Print each product group
 	let grandTotalAmount = 0;
+	let grandTotalAmountBase = 0;
 	let grandFarmerAmount = 0;
 	let grandEmployeeAmount = 0;
 	let grandPromotionAmount = 0;
@@ -226,8 +235,10 @@ function printProductSummary(
 		p.bold(true);
 		p.println(`  ยอดเถ้าแก่:  ${agg.farmerAmount}`);
 		p.bold(false);
-		p.println(`  ยอดคนตัด:  ${agg.employeeAmount}`);
-		if (agg.promotionAmount > 0) {
+		if (agg.employeeAmount > 0) {
+			p.println(`  ยอดคนตัด:  ${agg.employeeAmount}`);
+		}
+		if (lines.length <= 1 && agg.promotionAmount > 0) {
 			p.println(`  ค่านำส่ง:    ${agg.promotionAmount}`);
 		}
 		p.println("");
@@ -238,18 +249,67 @@ function printProductSummary(
 		grandPromotionAmount += agg.promotionAmount;
 	}
 
+	// Track base total (without promotion) for ยอดซื้อ line
+	for (const line of lines) {
+		grandTotalAmountBase += line.totalAmount ?? 0;
+	}
+
+	// Employee breakdown section (inline)
+	const employeeMap = new Map<
+		string,
+		Map<string, { employeeAmount: number }>
+	>();
+	for (const line of lines) {
+		if (!line.employeeDisplayName) continue;
+		const empProducts = employeeMap.get(line.employeeDisplayName) ?? new Map();
+		const prodName = line.productName || "Unknown";
+		const existing = empProducts.get(prodName) ?? { employeeAmount: 0 };
+		existing.employeeAmount +=
+			line.isTransportationFee && line.transportationFeeEmployeeAmount
+				? line.transportationFeeEmployeeAmount
+				: line.employeeAmount ?? 0;
+		empProducts.set(prodName, existing);
+		employeeMap.set(line.employeeDisplayName, empProducts);
+	}
+
+	if (employeeMap.size > 1) {
+		p.println("------------------------------------------");
+		p.println("สรุปตามคนตัด");
+		for (const [empName, products] of employeeMap) {
+			p.println(`  คนตัด: ${empName}`);
+			let empTotal = 0;
+			for (const [prodName, agg] of products) {
+				p.println(`    ${prodName}: ${agg.employeeAmount}`);
+				empTotal += agg.employeeAmount;
+			}
+			if (products.size > 1) {
+				p.bold(true);
+				p.println(`    รวม: ${empTotal}`);
+				p.bold(false);
+			}
+		}
+		p.println("");
+	}
+
 	// Print grand total
 	p.println("------------------------------------------");
 	p.println("รวม");
-	p.println(`  ยอดซื้อ:     ${grandTotalAmount}`);
+	p.println(`  ยอดซื้อ:     ${grandTotalAmountBase}`);
 	p.bold(true);
 	p.setTextSize(1, 1);
 	p.println(`  ยอดเถ้าแก่:  ${grandFarmerAmount}`);
 	p.setTextSize(0, 0);
 	p.bold(false);
-	p.println(`  ยอดคนตัด:  ${grandEmployeeAmount}`);
+	if (grandEmployeeAmount > 0) {
+		p.println(`  ยอดคนตัด:  ${grandEmployeeAmount}`);
+	}
 	if (grandPromotionAmount > 0) {
 		p.println(`  ค่านำส่ง:    ${grandPromotionAmount}`);
+		p.bold(true);
+		p.setTextSize(1, 1);
+		p.println(`  ยอดรวมสุทธิ:  ${grandTotalAmount}`);
+		p.setTextSize(0, 0);
+		p.bold(false);
 	}
 	p.println("------------------------------------------");
 	p.partialCut();
@@ -273,8 +333,8 @@ function printEmployeeSummary(
 		}
 	}
 
-	// Skip if only 1 or 0 employees — no need for per-employee breakdown
-	if (uniqueEmployees.size <= 1) return;
+	// Skip if no employees
+	if (uniqueEmployees.size === 0) return;
 
 	// Group lines by employee → product
 	const employeeGroups = new Map<
@@ -294,6 +354,7 @@ function printEmployeeSummary(
 	}
 
 	for (const [employeeName, group] of employeeGroups) {
+		if (group.lines.length <= 1) continue;
 		printShopHeader(p, { ...opts });
 		p.println(`สรุปยอดซื้อ - คนตัด: ${employeeName}`);
 		p.println("");
@@ -319,8 +380,11 @@ function printEmployeeSummary(
 			};
 			existing.totalWeight += line.weight ?? 0;
 			existing.price = line.price ?? 0;
-			existing.totalAmount += line.totalAmount ?? 0;
-			existing.employeeAmount += line.employeeAmount ?? 0;
+			existing.totalAmount += line.totalNetAmount ?? line.totalAmount ?? 0;
+			existing.employeeAmount +=
+				line.isTransportationFee && line.transportationFeeEmployeeAmount
+					? line.transportationFeeEmployeeAmount
+					: line.employeeAmount ?? 0;
 			productGroups.set(name, existing);
 		}
 
@@ -328,9 +392,7 @@ function printEmployeeSummary(
 
 		for (const [productName, agg] of productGroups) {
 			p.println(productName);
-			p.println(
-				`  ${agg.totalWeight} x ${agg.price} = ${agg.totalAmount}`,
-			);
+			p.println(`  ${agg.totalWeight} x ${agg.price} = ${agg.totalAmount}`);
 			p.println(`  ยอดคนตัด:  ${agg.employeeAmount}`);
 			p.println("");
 			grandEmployeeAmount += agg.employeeAmount;
@@ -383,6 +445,7 @@ export async function printReceipt(
 		printSummaryAmount(printer, texts.summaryCalculateText);
 		printFarmerBreakdown(printer, line, texts);
 		if (line.promotionTo === "sum" && line.promotionAmount) {
+			printer.setTextSize(0, 0);
 			printer.println(texts.promotionRateText);
 			printer.println(texts.promotionAmountText);
 			printer.setTextSize(1, 1);

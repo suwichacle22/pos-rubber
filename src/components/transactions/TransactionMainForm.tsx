@@ -158,15 +158,8 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 				const parsedLines = z
 					.array(convexUpdateTransactionLineSchema)
 					.parse(value.transactionLines);
-				const parsedLinesNet = parsedLines.map((line) => {
-					if (line.promotionRate && line.totalAmount && line.promotionAmount) {
-						const totalNetAmount = line.totalAmount + line.promotionAmount;
-						return { ...line, totalNetAmount: totalNetAmount };
-					}
-					return line;
-				});
 				await updateTransactionLine({
-					transactionLines: parsedLinesNet,
+					transactionLines: parsedLines,
 				});
 				// 2. Print receipt via Convex action + local printer
 				if (meta.submitAction === "print") {

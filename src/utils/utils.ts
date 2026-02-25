@@ -273,7 +273,7 @@ export function summaryTransactionTextFromConvex(
 	const employeeAmountTransportationFeeText = `= ${formatTransportationFeeEmployeeAmount}`;
 	const employeeAllTransportationFeeText = `${employeeCalculateTransportationFeeText} ${employeeAmountTransportationFeeText}`;
 	const harvestRateText = `ตัน ${formatHarvestRate}`;
-	const promotionRateText = `อัตราค่านำส่ง: ${formatPromotionRate}`;
+	const promotionRateText = `อัตราค่านำส่ง: ${formatPromotionRate} สตางค์`;
 	const promotionAmountText = `ยอดค่านำส่ง:  ${formatPromotionAmount}`;
 	return {
 		summaryCalculateText,

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import SummaryProducts from "@/components/dashboard/SummaryProducts";
 import { useState } from "react";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/")({ component: App });
@@ -15,24 +14,46 @@ function getTodayString() {
 }
 
 function App() {
-	const [date, setDate] = useState(getTodayString);
+	const today = getTodayString();
+	const [startDate, setStartDate] = useState(today);
+	const [endDate, setEndDate] = useState(today);
 
 	return (
-		<div className="flex flex-col space-y-4 p-4">
-			<div className="flex flex-col w-1/5">
-				<FieldGroup>
-					<Field>
-						<FieldLabel>วันที่และเวลา</FieldLabel>
-						<Input
-							type="date"
-							value={date}
-							onChange={(e) => setDate(e.target.value)}
-							placeholder="วันที่และเวลา"
-						/>
-					</Field>
-				</FieldGroup>
+		<div className="flex flex-col gap-8 p-6">
+			{/* Date range filter */}
+			<div className="flex flex-wrap items-center gap-4">
+				<div className="flex items-center gap-2">
+					<label
+						htmlFor="startDate"
+						className="text-sm font-medium whitespace-nowrap"
+					>
+						ตั้งแต่
+					</label>
+					<Input
+						id="startDate"
+						type="date"
+						value={startDate}
+						onChange={(e) => setStartDate(e.target.value)}
+						className="w-auto"
+					/>
+				</div>
+				<div className="flex items-center gap-2">
+					<label
+						htmlFor="endDate"
+						className="text-sm font-medium whitespace-nowrap"
+					>
+						ถึง
+					</label>
+					<Input
+						id="endDate"
+						type="date"
+						value={endDate}
+						onChange={(e) => setEndDate(e.target.value)}
+						className="w-auto"
+					/>
+				</div>
 			</div>
-			<SummaryProducts date={date} />
+			<SummaryProducts startDate={startDate} endDate={endDate} />
 		</div>
 	);
 }

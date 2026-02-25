@@ -4,9 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "convex/_generated/api";
 
-export default function SummaryProducts({ date }: { date: string }) {
+export default function SummaryProducts({
+	startDate,
+	endDate,
+}: {
+	startDate: string;
+	endDate: string;
+}) {
 	const { data, isLoading } = useQuery(
-		convexQuery(api.transactions.queries.getDailySummary, { date }),
+		convexQuery(api.transactions.queries.getDailySummary, {
+			startDate,
+			endDate,
+		}),
 	);
 
 	return (

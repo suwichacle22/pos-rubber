@@ -9,6 +9,7 @@ import {
 import {
 	calculateHarvestRateAmount,
 	calculatePromotionAmount,
+	calculateTransactionTotalNetAmount,
 } from "@/utils/utils";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
@@ -76,6 +77,13 @@ export const TransactionPalmGroup = withForm({
 					`transactionLines[${i}].promotionAmount`,
 					promotionAmount,
 				);
+				const totalAmount = form.getFieldValue(
+					`transactionLines[${i}].totalAmount`,
+				);
+				form.setFieldValue(
+					`transactionLines[${i}].totalNetAmount`,
+					calculateTransactionTotalNetAmount(totalAmount || "", promotionAmount),
+				);
 			}
 		};
 
@@ -129,6 +137,14 @@ export const TransactionPalmGroup = withForm({
 												form.setFieldValue(
 													`transactionLines[${i}].employeePaidType`,
 													"cash",
+												);
+												// Reset totalNetAmount to totalAmount (no promotion)
+												const totalAmount = form.getFieldValue(
+													`transactionLines[${i}].totalAmount`,
+												);
+												form.setFieldValue(
+													`transactionLines[${i}].totalNetAmount`,
+													totalAmount || "",
 												);
 											}
 										}

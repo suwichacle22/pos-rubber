@@ -54,7 +54,7 @@ export default function TransactionSummary({
 		};
 		existing.totalWeight += parseFloat(line.weight) || 0;
 		existing.price = parseFloat(line.price) || 0;
-		existing.totalAmount += parseFloat(line.totalAmount) || 0;
+		existing.totalAmount += parseFloat(line.totalNetAmount || line.totalAmount) || 0;
 		existing.farmerAmount +=
 			line.isTransportationFee && line.transportationFeeFarmerAmount
 				? parseFloat(line.transportationFeeFarmerAmount) || 0
@@ -106,7 +106,7 @@ export default function TransactionSummary({
 
 		existingProd.totalWeight += parseFloat(line.weight) || 0;
 		existingProd.price = parseFloat(line.price) || 0;
-		existingProd.totalAmount += parseFloat(line.totalAmount) || 0;
+		existingProd.totalAmount += parseFloat(line.totalNetAmount || line.totalAmount) || 0;
 		const empAmt =
 			line.isTransportationFee && line.transportationFeeEmployeeAmount
 				? parseFloat(line.transportationFeeEmployeeAmount) || 0
@@ -120,9 +120,13 @@ export default function TransactionSummary({
 
 	// ── Grand totals ──
 	let grandTotalAmount = 0;
+	let grandTotalAmountBase = 0;
 	let grandFarmerAmount = 0;
 	let grandEmployeeAmount = 0;
 	let grandPromotionAmount = 0;
+	for (const line of lines) {
+		grandTotalAmountBase += parseFloat(line.totalAmount) || 0;
+	}
 	for (const agg of productGroups.values()) {
 		grandTotalAmount += agg.totalAmount;
 		grandFarmerAmount += agg.farmerAmount;
@@ -203,7 +207,7 @@ export default function TransactionSummary({
 				<div className="w-full border-t gap-2 p-4 pt-4">
 					<div className="flex justify-between font-semibold">
 						<span>ยอดซื้อรวม:</span>
-						<span>{grandTotalAmount}</span>
+						<span>{grandTotalAmountBase}</span>
 					</div>
 					<div className="flex justify-between">
 						<span>ยอดเถ้าแก่รวม:</span>
@@ -216,10 +220,16 @@ export default function TransactionSummary({
 						</div>
 					)}
 					{grandPromotionAmount > 0 && (
-						<div className="flex justify-between">
-							<span>ค่านำส่งรวม:</span>
-							<span>{grandPromotionAmount}</span>
-						</div>
+						<>
+							<div className="flex justify-between">
+								<span>ค่านำส่งรวม:</span>
+								<span>{grandPromotionAmount}</span>
+							</div>
+							<div className="flex justify-between font-semibold text-lg">
+								<span>ยอดรวมสุทธิ:</span>
+								<span>{grandTotalAmount}</span>
+							</div>
+						</>
 					)}
 				</div>
 			</CardFooter>
