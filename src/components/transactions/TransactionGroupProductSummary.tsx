@@ -52,9 +52,9 @@ export default function TransactionGroupProductSummary({
 		<div className="flex flex-col gap-1">
 			{[...productGroups.entries()]
 			.sort(([, a], [, b]) => {
-				const aIdx = products.findIndex((p) => p.label === a.productName);
-				const bIdx = products.findIndex((p) => p.label === b.productName);
-				return aIdx - bIdx;
+				const aLines = products.find((p) => p.label === a.productName)?.productLines ?? Infinity;
+				const bLines = products.find((p) => p.label === b.productName)?.productLines ?? Infinity;
+				return aLines - bLines;
 			})
 			.map(([productId, agg]) => (
 				<div key={productId} className="flex justify-between text-sm">

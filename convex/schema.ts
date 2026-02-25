@@ -36,6 +36,7 @@ export default defineSchema({
 		.index("by_farmerId_and_displayName", ["farmerId", "displayName"]),
 	products: defineTable({
 		productName: v.string(),
+		productLines: v.optional(v.number()),
 	}).index("by_productName", ["productName"]),
 	productPrices: defineTable({
 		productId: v.id("products"),

@@ -90,9 +90,13 @@ export const getProductForm = query({
 	returns: v.any(),
 	handler: async ({ db }) => {
 		const products = await db.query("products").collect();
-		return products.map((product) => ({
+		const sorted = products.sort(
+			(a, b) => (a.productLines ?? Infinity) - (b.productLines ?? Infinity),
+		);
+		return sorted.map((product) => ({
 			value: product._id as string,
 			label: product.productName,
+			productLines: product.productLines ?? null,
 		}));
 	},
 });
@@ -144,7 +148,9 @@ export const listProductsWithLatestPrice = query({
 			};
 		});
 
-		return productsWithPrice.sort((a, b) => b._creationTime - a._creationTime);
+		return productsWithPrice.sort(
+			(a, b) => (a.productLines ?? Infinity) - (b.productLines ?? Infinity),
+		);
 	},
 });
 
@@ -359,7 +365,7 @@ export const getDailySummary = query({
 			const product = await db.get(productId as Id<"products">);
 			result.push({
 				productName: product?.productName ?? "Unknown",
-				productCreationTime: product?._creationTime ?? 0,
+				productLines: product?.productLines ?? Infinity,
 				totalWeight: String(agg.totalWeight),
 				averagePrice: String(
 					agg.priceCount > 0 ? agg.priceSum / agg.priceCount : 0,
@@ -368,7 +374,7 @@ export const getDailySummary = query({
 			});
 		}
 
-		result.sort((a, b) => a.productCreationTime - b.productCreationTime);
+		result.sort((a, b) => a.productLines - b.productLines);
 		return result;
 	},
 });

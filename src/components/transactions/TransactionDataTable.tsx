@@ -178,9 +178,9 @@ export default function TransactionDataTable({
 						<>
 							{[...productGroups.entries()]
 							.sort(([a], [b]) => {
-								const aIdx = products?.findIndex((p) => p.label === a) ?? 0;
-								const bIdx = products?.findIndex((p) => p.label === b) ?? 0;
-								return aIdx - bIdx;
+								const aLines = products?.find((p) => p.label === a)?.productLines ?? Infinity;
+								const bLines = products?.find((p) => p.label === b)?.productLines ?? Infinity;
+								return aLines - bLines;
 							})
 							.map(([productName, agg]) => (
 									<div

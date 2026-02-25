@@ -113,6 +113,24 @@ export const createProductPrice = mutation({
 	},
 });
 
+export const updateProduct = mutation({
+	args: {
+		productId: v.id("products"),
+		productLines: v.optional(v.number()),
+	},
+	returns: v.null(),
+	handler: async ({ db }, args) => {
+		const product = await db.get(args.productId);
+		if (!product) {
+			throw new Error("Product not found");
+		}
+		await db.patch(args.productId, {
+			productLines: args.productLines,
+		});
+		return null;
+	},
+});
+
 export const createTransactionGroup = mutation({
 	args: {
 		farmerId: v.optional(v.id("farmers")),
