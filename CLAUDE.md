@@ -97,13 +97,14 @@ Farmer gets = Total - Harvester amount
 - Goes to either farmer OR harvester (not split)
 - Separate receipt
 
-### 7. Price Management (TODO: auto-fill not yet implemented)
+### 7. Price Management
 
 - Set daily per product
 - Transaction locks in price at time of sale
 - If not set today, use latest price
 - Price history kept for reference
-- TODO: Auto-fill price when product is selected in transaction form
+- **Palm price auto-fill (implemented):** Selecting a palm product auto-fills latest palm price via `getLatestPalmPrice` query; ปาล์มร่วง adds +0.5 to base palm price
+- TODO: Auto-fill price for rubber/other products when selected
 
 ### 8. Transaction Groups
 
@@ -161,10 +162,10 @@ Farmer gets = Total - Harvester amount
 
 1. Select farmer (or add new inline)
 2. Enter note (optional)
-3. Select product → auto-fills price, split defaults (TODO: implement auto-fill)
+3. Select product → auto-fills price for palm products (implemented), split defaults (TODO)
 4. Optional: vehicle weighting checkbox → car license, weight in/out
 5. Enter weight (or auto-calculated from vehicle weights)
-6. Price field (TODO: auto-fill from daily price)
+6. Price field (auto-filled for palm, TODO for other products)
 7. Select split type via `isSplit` dropdown:
    - "ไม่แบ่ง" (none) → uses "own" employee, hides split/employee UI
    - Preset ratios (6/4, 55/45, 1/2, 58/42) → shows employee dropdown + ratios
@@ -177,14 +178,19 @@ Farmer gets = Total - Harvester amount
 12. Click "Add line" → creates empty line in Convex (async, wait for server) → adds to form
 13. Repeat 3-12 for more lines
 14. View summary (calculated totals per person)
-15. All field changes auto-sync to Convex via onChange with 2000ms debounce (no manual save button)
+15. All field changes auto-sync to Convex via onChange with 500ms debounce (no manual save button)
 16. Preview/print invoice
 17. Submit when paid (explicit status change)
 
-**Invoice types:**
+**Receipt types & labels:**
 
-- Farmer invoice: all lines, all employees, summary breakdown
-- Employee invoice: only their lines, hides farmer portion
+- **Per-line farmer receipt** (ใบเสร็จเถ้าแก่): one per transaction line, shows farmer amounts
+- **Per-line employee receipt** (ใบเสร็จคนตัด): one per transaction line, shows employee/harvester amounts
+- **Farmer summary receipt** (ใบสรุปเถ้าแก่): all lines aggregated per product, summary breakdown
+- **Employee summary receipt** (ใบสรุปคนตัด): separate per employee, only prints when >1 unique employee in group
+- Each per-line receipt shows bold "รายการที่ X" when group has >1 lines
+- Inline employee breakdown (สรุปตามคนตัด) in farmer summary only prints when >1 employee
+- Transportation fee in receipts: when `isTransportationFee` is true, use `transportationFeeFarmerAmount`/`transportationFeeEmployeeAmount` (not raw `farmerAmount`/`employeeAmount`)
 
 ### 2. Draft/Pending Transactions Screen
 
@@ -222,6 +228,28 @@ product (1) ──→ (many) split_defaults
 product (1) ──→ (many) product_price
 product (1) ──→ (many) transaction_line
 ```
+
+### Product Display Order
+
+- Products have `productLines: v.optional(v.number())` for custom display/sort order
+- All product queries and summaries sort by `productLines` ascending (nulls last via `?? Infinity`)
+- Editable on `/products` page via "ลำดับ" input field (save-on-blur)
+- `updateProduct` mutation saves `productLines`
+
+### Cascade Delete
+
+- `deleteTransactionGroup` cascades: deletes all transaction lines by groupId before deleting the group
+
+### isSplit / isHarvestRate Clearing Behavior
+
+- When `isSplit` changes to `"none"`: clears `employeeId`, `employeeAmount`, `farmerRatio`, `employeeRatio`; sets `farmerAmount = totalAmount`
+- When `isHarvestRate` changes to `false`: clears `employeeId`, `harvestRate`, `employeeAmount`; sets `farmerAmount = totalAmount`
+- **Cascade conflict guard:** ratio onChange listeners have `if (isSplit === "none") return;` to prevent recalculating amounts when ratios are being cleared
+- Palm group (`TransactionPalmGroup`) spreads these resets to all palm lines
+
+### Date Range on Dashboard
+
+- Index route (`/`) uses date range picker (startDate/endDate) instead of single date
 
 ---
 ### Future (v2)
@@ -376,10 +404,11 @@ Think about: form state management, optimistic updates, error recovery
 
 ### Auto-Sync Pattern (Transaction Form)
 
-- **Approach:** Form-level `listeners.onChange` with `onChangeDebounceMs: 2000` — every field change auto-saves to Convex
+- **Approach:** Form-level `listeners.onChange` with `onChangeDebounceMs: 500` — every field change auto-saves to Convex
 - **No manual save button** for individual fields — auto-sync like Google Docs
 - **Group creation:** `createTransactionGroup` auto-generates first empty transaction line
-- **Calculation cascade:** weight → totalAmount → farmerAmount/employeeAmount → transportFee amounts (4 hops × 300ms = ~1200ms). The 2000ms debounce waits for cascade to settle before saving.
+- **Calculation cascade:** weight → totalAmount → farmerAmount/employeeAmount → transportFee amounts (4 hops × 100ms debounce per field). The 500ms form debounce waits for cascade to settle before saving.
+- **Form key:** `TransactionMainFormNew` uses `key={groupId}` to force re-mount when navigating between transactions, preventing stale form data
 - **onChange routing:** Parse `fieldApi.name` to determine what to save:
   - `transactionGroup.*` → save group via `updateTransactionGroup`
   - `transactionLines[i].*` → save that specific line (whole line object) via `updateTransactionLine`
@@ -406,15 +435,16 @@ Think about: form state management, optimistic updates, error recovery
 |---|---|---|---|
 | transactionLinesId | string | _id (auto) | Maps to _id |
 | — | — | transactionGroupId | Not in form (relationship key) |
-| employeeId, productId | string | v.optional(v.id()) | "" → undefined, else cast to Id |
-| weight, price, totalAmount, all ratio/amount fields | string | v.optional(v.number()) | "" → undefined, else parseFloat |
+| employeeId, productId | string | v.optional(v.id()) | "" → null, else cast to Id |
+| carLicenseId | string | v.optional(v.id()) | "" → null, else cast to Id |
+| weight, price, totalAmount, all ratio/amount fields | string | v.optional(v.number()) | "" → null, else parseFloat |
 | isVehicle, isTransportationFee, isHarvestRate | boolean | v.optional(v.boolean()) | Pass through |
 | isSplit | string | v.optional(union) | Pass through |
-| farmerPaidType, employeePaidType | string | v.optional(paidType) | "" → undefined |
-| promotionTo | string | v.optional(promotionType) | "" → undefined |
-| carLicense | string | v.optional(v.string()) | "" → undefined |
-| totalNetAmount | string | v.optional(v.number()) | "" → undefined, else parseFloat |
-| — | — | carLicenseId | Not in form yet |
+| farmerPaidType, employeePaidType | string | v.optional(paidType) | "" → null |
+| promotionTo | string | v.optional(promotionType) | "" → null |
+| totalNetAmount | string | v.optional(v.number()) | "" → null, else parseFloat |
+
+**Clearing fields pattern:** Form `""` → Zod transform to `null` → Convex mutation receives `null` → handler converts `null` to `undefined` → `db.patch()` removes field from document. This is needed because `undefined` gets stripped during JSON serialization and never reaches Convex.
 
 **transactionPalmGroup:** UI-only (no DB table). Spreads values into individual transactionLines.
 
@@ -431,6 +461,10 @@ Think about: form state management, optimistic updates, error recovery
 | น้ำยาง             | Latex              | Product type                |
 | ยางถ้วย            | Cup Rubber         | Product type                |
 | ปาล์ม              | Palm               | Product type                |
+| ปาล์มร่วง          | Loose Palm Fruit   | Product type                |
+| ขี้จอก             | Cup Lump Rubber    | Product type                |
+| ขี้โรงจักร          | Factory Rubber Waste | Product type              |
+| ลำดับ              | Product Line / Sort Order | Display ordering     |
 | ค่าขนส่ง           | Transportation Fee | Deducted from employee      |
 | ค่าตัด             | Harvest Rate       | Per kg payment to harvester |
 | โปรโมชั่น          | Promotion          | Extra per kg (Palm)         |
