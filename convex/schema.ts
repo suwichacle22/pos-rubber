@@ -52,13 +52,10 @@ export default defineSchema({
 		harvestRate: v.optional(v.number()),
 		promotionTo: v.optional(customerType),
 		transportationFee: v.optional(v.number()),
-		createdAt: v.number(),
-		updatedAt: v.number(),
 	})
 		.index("by_employeeId", ["employeeId"])
 		.index("by_productId", ["productId"])
-		.index("by_employeeId_and_productId", ["employeeId", "productId"])
-		.index("by_createdAt", ["createdAt"]),
+		.index("by_employeeId_and_productId", ["employeeId", "productId"]),
 
 	transactionGroups: defineTable({
 		farmerId: v.optional(v.id("farmers")),
