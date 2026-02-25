@@ -113,7 +113,8 @@ function printEmployeeBreakdown(
 		if (!line.isTransportationFee) {
 			p.println(texts.employeeAmountText);
 		} else {
-			p.println(texts.employeeAllTransportationFeeText);
+			p.println(texts.employeeCalculateTransportationFeeText);
+			p.println(`${" ".repeat(13)}${texts.employeeAmountTransportationFeeText}`);
 		}
 		p.println("");
 	}
@@ -219,6 +220,12 @@ function printProductSummary(
 
 	// Print header
 	printShopHeader(p, { ...opts });
+	const hasEmployee = lines.some((l) => l.employeeDisplayName);
+	if (lines.length > 1 && hasEmployee) {
+		p.setTextSize(1, 1);
+		p.println("ใบสรุปเถ้าแก่");
+		p.setTextSize(0, 0);
+	}
 	p.println("สรุปยอดซื้อ");
 	p.println("");
 
@@ -254,20 +261,20 @@ function printProductSummary(
 		grandTotalAmountBase += line.totalAmount ?? 0;
 	}
 
-	// Employee breakdown section (inline)
+	// Employee breakdown section (inline) — shows farmer's portion per employee
 	const employeeMap = new Map<
 		string,
-		Map<string, { employeeAmount: number }>
+		Map<string, { farmerAmount: number }>
 	>();
 	for (const line of lines) {
 		if (!line.employeeDisplayName) continue;
 		const empProducts = employeeMap.get(line.employeeDisplayName) ?? new Map();
 		const prodName = line.productName || "Unknown";
-		const existing = empProducts.get(prodName) ?? { employeeAmount: 0 };
-		existing.employeeAmount +=
-			line.isTransportationFee && line.transportationFeeEmployeeAmount
-				? line.transportationFeeEmployeeAmount
-				: line.employeeAmount ?? 0;
+		const existing = empProducts.get(prodName) ?? { farmerAmount: 0 };
+		existing.farmerAmount +=
+			line.isTransportationFee && line.transportationFeeFarmerAmount
+				? line.transportationFeeFarmerAmount
+				: line.farmerAmount ?? 0;
 		empProducts.set(prodName, existing);
 		employeeMap.set(line.employeeDisplayName, empProducts);
 	}
@@ -279,8 +286,8 @@ function printProductSummary(
 			p.println(`  คนตัด: ${empName}`);
 			let empTotal = 0;
 			for (const [prodName, agg] of products) {
-				p.println(`    ${prodName}: ${agg.employeeAmount}`);
-				empTotal += agg.employeeAmount;
+				p.println(`    ${prodName}: ${agg.farmerAmount}`);
+				empTotal += agg.farmerAmount;
 			}
 			if (products.size > 1) {
 				p.bold(true);
@@ -356,6 +363,9 @@ function printEmployeeSummary(
 	for (const [employeeName, group] of employeeGroups) {
 		if (group.lines.length <= 1) continue;
 		printShopHeader(p, { ...opts });
+		p.setTextSize(1, 1);
+		p.println("ใบสรุปคนตัด");
+		p.setTextSize(0, 0);
 		p.println(`สรุปยอดซื้อ - คนตัด: ${employeeName}`);
 		p.println("");
 
@@ -433,12 +443,24 @@ export async function printReceipt(
 	const groupName = transactionData.transactionGroup.groupName;
 	const headerBase = { farmerName, dateThai, time, groupName };
 
-	for (const line of transactionData.lines) {
+	for (let i = 0; i < transactionData.lines.length; i++) {
+		const line = transactionData.lines[i];
+		const lineIndex = i + 1;
 		const texts = summaryTransactionTextFromConvex(line);
 		const hasEmployee = line.isSplit !== "none" || line.isHarvestRate;
 
 		// Farmer receipt (always printed)
 		printShopHeader(printer, { ...headerBase, productName: line.productName });
+		if (transactionData.lines.length > 1 && hasEmployee) {
+			printer.setTextSize(1, 1);
+			printer.println("ใบเสร็จเถ้าแก่");
+			printer.setTextSize(0, 0);
+		}
+		if (transactionData.lines.length > 1) {
+			printer.bold(true);
+			printer.println(`รายการที่ ${lineIndex}`);
+			printer.bold(false);
+		}
 		if (line.isVehicle) {
 			printVehicleSection(printer, line);
 		}
@@ -466,6 +488,14 @@ export async function printReceipt(
 				...headerBase,
 				productName: line.productName,
 			});
+			if (transactionData.lines.length > 1) {
+				printer.setTextSize(1, 1);
+				printer.println("ใบเสร็จคนตัด");
+				printer.setTextSize(0, 0);
+				printer.bold(true);
+				printer.println(`รายการที่ ${lineIndex}`);
+				printer.bold(false);
+			}
 			if (line.isVehicle) {
 				printVehicleSection(printer, line, { boldWeight: true });
 			}

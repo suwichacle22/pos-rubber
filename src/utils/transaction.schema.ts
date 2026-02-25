@@ -2,11 +2,11 @@ import { formOptions } from "@tanstack/react-form";
 import { z } from "zod";
 import type { Id } from "convex/_generated/dataModel";
 
-const emptyStringToUndefined = (val: string | null | undefined) => (val === "" || !val ? undefined : val);
-const stringToNumberOrUndefined = (val: string | null | undefined) => {
-	if (val === "" || !val) return undefined;
+const emptyStringToNull = (val: string | null | undefined) => (val === "" || !val ? null : val);
+const stringToNumberOrNull = (val: string | null | undefined) => {
+	if (val === "" || !val) return null;
 	const num = parseFloat(val);
-	return Number.isNaN(num) ? undefined : num;
+	return Number.isNaN(num) ? null : num;
 };
 
 export const numericValidator = {
@@ -129,33 +129,33 @@ export const transactionLineSchema = z.object({
 
 export const convexUpdateTransactionLineSchema = z.object({
 	transactionLinesId: z.string().min(1).transform(val => val as Id<"transactionLines">),
-	employeeId: z.string().nullable().transform(val => emptyStringToUndefined(val) as Id<"employees"> | undefined),
-	productId: z.string().nullable().transform(val => emptyStringToUndefined(val) as Id<"products"> | undefined),
-	carLicenseId: z.string().nullable().transform(val => emptyStringToUndefined(val) as Id<"carlicenses"> | undefined),
+	employeeId: z.string().nullable().transform(val => emptyStringToNull(val) as Id<"employees"> | null),
+	productId: z.string().nullable().transform(val => emptyStringToNull(val) as Id<"products"> | null),
+	carLicenseId: z.string().nullable().transform(val => emptyStringToNull(val) as Id<"carlicenses"> | null),
 	isVehicle: z.boolean(),
-	weightVehicleIn: z.string().nullable().transform(stringToNumberOrUndefined),
-	weightVehicleOut: z.string().nullable().transform(stringToNumberOrUndefined),
-	weight: z.string().nullable().transform(stringToNumberOrUndefined),
-	price: z.string().nullable().transform(stringToNumberOrUndefined),
-	totalAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	weightVehicleIn: z.string().nullable().transform(stringToNumberOrNull),
+	weightVehicleOut: z.string().nullable().transform(stringToNumberOrNull),
+	weight: z.string().nullable().transform(stringToNumberOrNull),
+	price: z.string().nullable().transform(stringToNumberOrNull),
+	totalAmount: z.string().nullable().transform(stringToNumberOrNull),
 	isSplit: z.enum(["none", "6/4", "55/45", "1/2", "58/42", "custom"]),
-	farmerRatio: z.string().nullable().transform(stringToNumberOrUndefined),
-	employeeRatio: z.string().nullable().transform(stringToNumberOrUndefined),
-	farmerAmount: z.string().nullable().transform(stringToNumberOrUndefined),
-	employeeAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	farmerRatio: z.string().nullable().transform(stringToNumberOrNull),
+	employeeRatio: z.string().nullable().transform(stringToNumberOrNull),
+	farmerAmount: z.string().nullable().transform(stringToNumberOrNull),
+	employeeAmount: z.string().nullable().transform(stringToNumberOrNull),
 	isTransportationFee: z.boolean(),
-	transportationFee: z.string().nullable().transform(stringToNumberOrUndefined),
-	transportationFeeAmount: z.string().nullable().transform(stringToNumberOrUndefined),
-	transportationFeeFarmerAmount: z.string().nullable().transform(stringToNumberOrUndefined),
-	transportationFeeEmployeeAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	transportationFee: z.string().nullable().transform(stringToNumberOrNull),
+	transportationFeeAmount: z.string().nullable().transform(stringToNumberOrNull),
+	transportationFeeFarmerAmount: z.string().nullable().transform(stringToNumberOrNull),
+	transportationFeeEmployeeAmount: z.string().nullable().transform(stringToNumberOrNull),
 	farmerPaidType: z.enum(["cash", "bank transfer"]),
 	employeePaidType: z.enum(["cash", "bank transfer"]),
 	isHarvestRate: z.boolean(),
-	harvestRate: z.string().nullable().transform(stringToNumberOrUndefined),
-	promotionRate: z.string().nullable().transform(stringToNumberOrUndefined),
-	promotionTo: z.union([z.enum(["sum", "split"]), z.literal(""), z.null()]).transform(val => emptyStringToUndefined(val) as "sum" | "split" | undefined),
-	promotionAmount: z.string().nullable().transform(stringToNumberOrUndefined),
-	totalNetAmount: z.string().nullable().transform(stringToNumberOrUndefined),
+	harvestRate: z.string().nullable().transform(stringToNumberOrNull),
+	promotionRate: z.string().nullable().transform(stringToNumberOrNull),
+	promotionTo: z.union([z.enum(["sum", "split"]), z.literal(""), z.null()]).transform(val => emptyStringToNull(val) as "sum" | "split" | null),
+	promotionAmount: z.string().nullable().transform(stringToNumberOrNull),
+	totalNetAmount: z.string().nullable().transform(stringToNumberOrNull),
 }).transform(data => {
 	const { transactionLinesId, ...rest } = data;
 	return {

@@ -146,6 +146,15 @@ export const TransactionPalmGroup = withForm({
 													`transactionLines[${i}].totalNetAmount`,
 													totalAmount || "",
 												);
+												// Reset farmer gets full total, clear employee
+												form.setFieldValue(
+													`transactionLines[${i}].farmerAmount`,
+													totalAmount || "",
+												);
+												form.setFieldValue(
+													`transactionLines[${i}].employeeAmount`,
+													"",
+												);
 											}
 										}
 										// Keep scroll on this component after line cards expand above

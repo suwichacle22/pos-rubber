@@ -9,7 +9,7 @@ function RouteComponent() {
 	const { groupId } = Route.useParams();
 	return (
 		<div>
-			<TransactionMainFormNew groupId={groupId} />
+			<TransactionMainFormNew key={groupId} groupId={groupId} />
 		</div>
 	);
 }

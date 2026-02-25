@@ -24,6 +24,8 @@ import {
 	CardContent,
 } from "@/components/ui/card";
 import { formatDateThaiConvex } from "@/utils/utils";
+import { useQuery } from "convex/react";
+import { api } from "convex/_generated/api";
 
 export type TransactionLineRow = {
 	_id: string;
@@ -113,6 +115,7 @@ export default function TransactionDataTable({
 	data: TransactionLineRow[];
 }) {
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const products = useQuery(api.transactions.queries.getProductForm);
 
 	const table = useReactTable({
 		data,
@@ -173,23 +176,28 @@ export default function TransactionDataTable({
 					</p>
 					{productGroups.size > 0 ? (
 						<>
-							{[...productGroups.entries()].map(
-								([productName, agg]) => (
+							{[...productGroups.entries()]
+							.sort(([a], [b]) => {
+								const aIdx = products?.findIndex((p) => p.label === a) ?? 0;
+								const bIdx = products?.findIndex((p) => p.label === b) ?? 0;
+								return aIdx - bIdx;
+							})
+							.map(([productName, agg]) => (
 									<div
 										key={productName}
 										className="flex justify-between text-sm"
 									>
 										<span>
 											{productName}: {agg.totalWeight} x{" "}
-											{agg.price}
+											{agg.price.toFixed(2)}
 										</span>
-										<span>{agg.totalAmount}</span>
+										<span>{agg.totalAmount.toFixed(2)}</span>
 									</div>
 								),
 							)}
 							<div className="flex justify-between font-semibold border-t pt-2 mt-1">
 								<span>ยอดรวม:</span>
-								<span>{grandTotal}</span>
+								<span>{grandTotal.toFixed(2)}</span>
 							</div>
 						</>
 					) : (

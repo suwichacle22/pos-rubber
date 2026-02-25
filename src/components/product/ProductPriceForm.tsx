@@ -8,7 +8,7 @@ import { useAppForm } from "../form/formContext";
 import { FieldGroup } from "../ui/field";
 
 export function ProductPriceForm({ productId }: { productId: Id<"products"> }) {
-	const createProductPrice = useMutation(api.transaction.mutations.createProductPrice);
+	const createProductPrice = useMutation(api.transactions.mutations.createProductPrice);
 	const form = useAppForm({
 		defaultValues: {
 			price: "",

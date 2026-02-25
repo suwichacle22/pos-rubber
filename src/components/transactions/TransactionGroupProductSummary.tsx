@@ -50,7 +50,13 @@ export default function TransactionGroupProductSummary({
 
 	return (
 		<div className="flex flex-col gap-1">
-			{[...productGroups.entries()].map(([productId, agg]) => (
+			{[...productGroups.entries()]
+			.sort(([, a], [, b]) => {
+				const aIdx = products.findIndex((p) => p.label === a.productName);
+				const bIdx = products.findIndex((p) => p.label === b.productName);
+				return aIdx - bIdx;
+			})
+			.map(([productId, agg]) => (
 				<div key={productId} className="flex justify-between text-sm">
 					<span className="text-muted-foreground">{agg.productName}</span>
 					<span>
@@ -58,14 +64,14 @@ export default function TransactionGroupProductSummary({
 						{agg.totalWeight > 0
 							? (agg.totalAmount / agg.totalWeight).toFixed(2)
 							: 0}{" "}
-						= {agg.totalAmount}
+						= {agg.totalAmount.toFixed(2)}
 					</span>
 				</div>
 			))}
 			{productGroups.size > 1 && (
 				<div className="flex justify-between text-sm font-semibold border-t pt-1 mt-1">
 					<span>รวม</span>
-					<span>{grandTotal}</span>
+					<span>{grandTotal.toFixed(2)}</span>
 				</div>
 			)}
 		</div>

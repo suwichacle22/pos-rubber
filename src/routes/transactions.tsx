@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { EmptyTransaction } from "@/components/transactions/EmptyTransaction";
 import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -74,8 +73,6 @@ function RouteComponent() {
 	const submittedGroups = filteredGroups.filter(
 		(group) => group.status === "submitted",
 	);
-
-	if (transactionGroups.length === 0) return <EmptyTransaction />;
 
 	return (
 		<div className="flex flex-col gap-8 p-6">

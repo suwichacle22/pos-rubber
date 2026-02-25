@@ -165,6 +165,17 @@ export const deleteTransactionGroup = mutation({
 	},
 	returns: v.null(),
 	handler: async ({ db }, args) => {
+		// Delete all associated transaction lines first
+		const lines = await db
+			.query("transactionLines")
+			.withIndex("by_transactionGroupId", (q) =>
+				q.eq("transactionGroupId", args.transactionGroupId),
+			)
+			.collect();
+		for (const line of lines) {
+			await db.delete(line._id);
+		}
+		// Then delete the group
 		await db.delete(args.transactionGroupId);
 		return null;
 	},
@@ -196,33 +207,33 @@ export const updateTransactionLine = mutation({
 		transactionLines: v.array(
 			v.object({
 				transactionLineId: v.id("transactionLines"),
-				employeeId: v.optional(v.id("employees")),
-				productId: v.optional(v.id("products")),
+				employeeId: v.optional(v.union(v.id("employees"), v.null())),
+				productId: v.optional(v.union(v.id("products"), v.null())),
 				isVehicle: v.optional(v.boolean()),
-				carLicenseId: v.optional(v.id("carlicenses")),
-				weightVehicleIn: v.optional(v.number()),
-				weightVehicleOut: v.optional(v.number()),
-				weight: v.optional(v.number()),
-				price: v.optional(v.number()),
-				totalAmount: v.optional(v.number()),
+				carLicenseId: v.optional(v.union(v.id("carlicenses"), v.null())),
+				weightVehicleIn: v.optional(v.union(v.number(), v.null())),
+				weightVehicleOut: v.optional(v.union(v.number(), v.null())),
+				weight: v.optional(v.union(v.number(), v.null())),
+				price: v.optional(v.union(v.number(), v.null())),
+				totalAmount: v.optional(v.union(v.number(), v.null())),
 				isSplit: v.optional(productSplitFarmerEmployeeType),
-				farmerRatio: v.optional(v.number()),
-				employeeRatio: v.optional(v.number()),
-				farmerAmount: v.optional(v.number()),
-				employeeAmount: v.optional(v.number()),
+				farmerRatio: v.optional(v.union(v.number(), v.null())),
+				employeeRatio: v.optional(v.union(v.number(), v.null())),
+				farmerAmount: v.optional(v.union(v.number(), v.null())),
+				employeeAmount: v.optional(v.union(v.number(), v.null())),
 				isTransportationFee: v.optional(v.boolean()),
-				transportationFee: v.optional(v.number()),
-				transportationFeeAmount: v.optional(v.number()),
-				transportationFeeFarmerAmount: v.optional(v.number()),
-				transportationFeeEmployeeAmount: v.optional(v.number()),
+				transportationFee: v.optional(v.union(v.number(), v.null())),
+				transportationFeeAmount: v.optional(v.union(v.number(), v.null())),
+				transportationFeeFarmerAmount: v.optional(v.union(v.number(), v.null())),
+				transportationFeeEmployeeAmount: v.optional(v.union(v.number(), v.null())),
 				farmerPaidType: v.optional(paidType),
 				employeePaidType: v.optional(paidType),
 				isHarvestRate: v.optional(v.boolean()),
-				harvestRate: v.optional(v.number()),
-				promotionRate: v.optional(v.number()),
-				promotionTo: v.optional(promotionType),
-				promotionAmount: v.optional(v.number()),
-				totalNetAmount: v.optional(v.number()),
+				harvestRate: v.optional(v.union(v.number(), v.null())),
+				promotionRate: v.optional(v.union(v.number(), v.null())),
+				promotionTo: v.optional(v.union(promotionType, v.null())),
+				promotionAmount: v.optional(v.union(v.number(), v.null())),
+				totalNetAmount: v.optional(v.union(v.number(), v.null())),
 			}),
 		),
 	},
@@ -237,7 +248,10 @@ export const updateTransactionLine = mutation({
 			}
 			const patch: Record<string, unknown> = {};
 			for (const [key, value] of Object.entries(patchFields)) {
-				if (value !== undefined) {
+				if (value === null) {
+					// null means "clear this field" — set to undefined to remove from document
+					patch[key] = undefined;
+				} else if (value !== undefined) {
 					patch[key] = value;
 				}
 			}

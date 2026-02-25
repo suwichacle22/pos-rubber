@@ -160,6 +160,10 @@ export const TransactionLineSplit = withForm({
 										listeners={{
 											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
+												const isSplit = form.getFieldValue(
+													`transactionLines[${index}].isSplit`,
+												);
+												if (isSplit === "none") return;
 												const employeeRatio = calculateSplitPercentage(value);
 												form.setFieldValue(
 													`transactionLines[${index}].employeeRatio`,
@@ -227,6 +231,10 @@ export const TransactionLineSplit = withForm({
 										listeners={{
 											onChangeDebounceMs: 100,
 											onChange: ({ value }) => {
+												const isSplit = form.getFieldValue(
+													`transactionLines[${index}].isSplit`,
+												);
+												if (isSplit === "none") return;
 												const employeeAmount = calculateSplitAmount(
 													form.getFieldValue(
 														`transactionLines[${index}].totalAmount`,

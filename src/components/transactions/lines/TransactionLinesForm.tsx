@@ -17,6 +17,8 @@ import { TransactionLineTransportFee } from "./TransactionLinesTransportFee";
 import { TransactionLineHarvestRate } from "./TransactionLinesHarvestRate";
 import { useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
+import { config } from "@/utils/config";
+import { calculateTotalAmount } from "@/utils/utils";
 
 export const TransactionLine = withForm({
 	...transactionFormOptions,
@@ -32,6 +34,7 @@ export const TransactionLine = withForm({
 		handleDeleteTransactionLine,
 	}) {
 		const productPalmId = useQuery(api.transactions.queries.getProductPalmIds);
+		const latestPalmPrice = useQuery(api.transactions.queries.getLatestPalmPrice);
 		return (
 			<Card>
 				<CardHeader>
@@ -62,6 +65,35 @@ export const TransactionLine = withForm({
 										return "กรุณาเลือกสินค้า";
 									}
 									return;
+								},
+							}}
+							listeners={{
+								onChange: ({ value }) => {
+									if (!value) return;
+									const isPalm = productPalmId?.some(
+										(p) => p._id === value,
+									);
+									if (!isPalm || latestPalmPrice == null) return;
+
+									const isPalmRuang =
+										value === config.product.palmRuangProductId;
+									const price = isPalmRuang
+										? (latestPalmPrice + 0.5).toString()
+										: latestPalmPrice.toString();
+
+									form.setFieldValue(
+										`transactionLines[${index}].price`,
+										price,
+									);
+
+									// Trigger calculation cascade
+									const weight = form.getFieldValue(
+										`transactionLines[${index}].weight`,
+									);
+									form.setFieldValue(
+										`transactionLines[${index}].totalAmount`,
+										calculateTotalAmount(weight, price),
+									);
 								},
 							}}
 							children={(field) => (

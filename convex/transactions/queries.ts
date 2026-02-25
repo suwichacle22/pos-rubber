@@ -359,6 +359,7 @@ export const getDailySummary = query({
 			const product = await db.get(productId as Id<"products">);
 			result.push({
 				productName: product?.productName ?? "Unknown",
+				productCreationTime: product?._creationTime ?? 0,
 				totalWeight: String(agg.totalWeight),
 				averagePrice: String(
 					agg.priceCount > 0 ? agg.priceSum / agg.priceCount : 0,
@@ -367,6 +368,22 @@ export const getDailySummary = query({
 			});
 		}
 
+		result.sort((a, b) => a.productCreationTime - b.productCreationTime);
 		return result;
+	},
+});
+
+export const getLatestPalmPrice = query({
+	args: {},
+	returns: v.union(v.number(), v.null()),
+	handler: async ({ db }) => {
+		const palmProductId =
+			"jn7fxvxkm44zdsf81tkxajn6wh81hdg5" as Id<"products">;
+		const latestPrice = await db
+			.query("productPrices")
+			.withIndex("by_productId", (q) => q.eq("productId", palmProductId))
+			.order("desc")
+			.first();
+		return latestPrice?.price ?? null;
 	},
 });
