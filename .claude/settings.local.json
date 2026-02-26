@@ -25,7 +25,18 @@
       "Bash(npx vinxi build)",
       "Bash(git stash pop)",
       "Bash(ls -la /c/Suwi/Projects/pos-rubber/*.md)",
-      "Bash(npx convex codegen)"
+      "Bash(npx convex codegen)",
+      "Bash(node -p \"const p = require\\(''./package.json''\\); JSON.stringify\\({ vinxi: p.dependencies?.vinxi || p.devDependencies?.vinxi, tanstackStart: p.dependencies?.[''@tanstack/react-start''] || p.devDependencies?.[''@tanstack/react-start''], tanstackRouter: p.dependencies?.[''@tanstack/react-router''] || p.devDependencies?.[''@tanstack/react-router''], node: process.version }, null, 2\\)\")",
+      "Bash(node -p \"const p = require\\(''./node_modules/vinxi/package.json''\\); p.version\")",
+      "Bash(node -p \"const p = require\\(''./node_modules/@tanstack/react-start/package.json''\\); p.version\")",
+      "Bash(npx vinxi --version)",
+      "Bash(node -p \"require\\(''./node_modules/nitro/package.json''\\).version\")",
+      "Bash(node -p \"require\\(''./node_modules/vite/package.json''\\).version\")",
+      "WebFetch(domain:bun.com)",
+      "Bash(node -e \":*)",
+      "Bash(npm ls vinxi)",
+      "Bash(npm ls vinxi --all)",
+      "Bash(npm run build)"
     ]
   }
 }

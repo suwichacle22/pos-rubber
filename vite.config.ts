@@ -16,15 +16,18 @@ const config = defineConfig({
   },
   plugins: [
     devtools(),
-    nitro({preset:"bun"}),
+    nitro({ preset: "bun" }),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),
     tailwindcss(),
     tanstackStart({
-      spa:{
-        enabled:true}}),
+      spa: {
+        enabled: true
+      },
+      prerender: { enabled: false }
+    }),
     viteReact({
       babel: {
         plugins: ['babel-plugin-react-compiler'],
