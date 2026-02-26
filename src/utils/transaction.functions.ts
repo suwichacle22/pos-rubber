@@ -3,7 +3,7 @@ import z from "zod";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
-import { printReceipt, printSummaryOnly } from "./transactions.server";
+import { printReceipt, printSingleLineReceipt, printSummaryOnly } from "./transactions.server";
 
 const getConvexUrl = (): string => {
 	const url = process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL;
@@ -53,4 +53,28 @@ export const getPrintTransactionGroupSummaryOnly = createServerFn({
 			},
 		);
 		return await printSummaryOnly(transactionData);
+	});
+
+export const getPrintTransactionLine = createServerFn({
+	method: "POST",
+})
+	.inputValidator(
+		z.object({
+			transactionGroupId: z.string().min(1),
+			transactionLineId: z.string().min(1),
+		}),
+	)
+	.handler(async ({ data }) => {
+		const client = new ConvexHttpClient(getConvexUrl());
+
+		const transactionData = await client.action(
+			api.transactions.actions.getPrintSummaryData,
+			{
+				transactionGroupId: data.transactionGroupId as Id<"transactionGroups">,
+			},
+		);
+		return await printSingleLineReceipt(
+			transactionData,
+			data.transactionLineId,
+		);
 	});

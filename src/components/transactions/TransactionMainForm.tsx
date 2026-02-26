@@ -23,6 +23,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import {
 	getPrintTransactionGroupSummary,
 	getPrintTransactionGroupSummaryOnly,
+	getPrintTransactionLine,
 } from "@/utils/transaction.functions";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -85,6 +86,32 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 	const printTransactionGroupSummaryOnly = useServerFn(
 		getPrintTransactionGroupSummaryOnly,
 	);
+	const printTransactionLineFn = useServerFn(getPrintTransactionLine);
+
+	const handlePrintTransactionLine = async (transactionLineId: string) => {
+		if (!transactionLineId) return;
+		const groupIdValue = transactionData.transactionGroup?._id as string;
+		if (!groupIdValue) return;
+		try {
+			const result = await printTransactionLineFn({
+				data: {
+					transactionGroupId: groupIdValue,
+					transactionLineId,
+				},
+			});
+			if (result.result === "print done") {
+				toast.success("พิมพ์สำเร็จ");
+			} else {
+				toast.error("พิมพ์ไม่สำเร็จ", {
+					description: result.error?.message,
+				});
+			}
+		} catch {
+			toast.error("พิมพ์ไม่สำเร็จ", {
+				description: "ลองใหม่อีกครั้ง",
+			});
+		}
+	};
 	const form = useAppForm({
 		...transactionFormOptions,
 		defaultValues: {
@@ -252,6 +279,9 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 														index,
 														field.removeValue,
 													)
+												}
+												handlePrintTransactionLine={(id) =>
+													handlePrintTransactionLine(id)
 												}
 											/>
 										);

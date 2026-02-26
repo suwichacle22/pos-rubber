@@ -23,7 +23,8 @@
       "Bash(xxd \"C:/Suwi/Projects/pos-rubber/src/components/farmer/FarmerCard.tsx\")",
       "Bash(git stash)",
       "Bash(npx vinxi build)",
-      "Bash(git stash pop)"
+      "Bash(git stash pop)",
+      "Bash(ls -la /c/Suwi/Projects/pos-rubber/*.md)"
     ]
   }
 }

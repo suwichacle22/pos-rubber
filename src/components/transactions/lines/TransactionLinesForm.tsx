@@ -12,7 +12,7 @@ import {
 import { TransactionLineWeight } from "./TransactionLinesWeight";
 import { TransactionLineSplit } from "./TransactionLinesSplit";
 import { Button } from "@/components/ui/button";
-import { TrashIcon } from "lucide-react";
+import { PrinterIcon, TrashIcon } from "lucide-react";
 import { TransactionLineTransportFee } from "./TransactionLinesTransportFee";
 import { TransactionLineHarvestRate } from "./TransactionLinesHarvestRate";
 import { useConvex, useQuery } from "convex/react";
@@ -28,12 +28,14 @@ export const TransactionLine = withForm({
 		index: 0,
 		selectProductsData: [{ label: "ไม่มีข้อมูล", value: "" }],
 		handleDeleteTransactionLine: (id: string) => {},
+		handlePrintTransactionLine: (id: string) => {},
 	},
 	render: function Render({
 		form,
 		index,
 		selectProductsData,
 		handleDeleteTransactionLine,
+		handlePrintTransactionLine,
 	}) {
 		const convex = useConvex();
 		const productPalmId = useQuery(api.transactions.queries.getProductPalmIds);
@@ -43,19 +45,35 @@ export const TransactionLine = withForm({
 				<CardHeader>
 					<CardTitle>รายการสินค้าที่ {index + 1}</CardTitle>
 					<CardAction>
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={() =>
-								handleDeleteTransactionLine(
-									form.getFieldValue(
-										`transactionLines[${index}].transactionLinesId`,
-									),
-								)
-							}
-						>
-							<TrashIcon className="h-4 w-4" />
-						</Button>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								size="icon"
+								onClick={() =>
+									handlePrintTransactionLine(
+										form.getFieldValue(
+											`transactionLines[${index}].transactionLinesId`,
+										),
+									)
+								}
+							>
+								<PrinterIcon className="h-4 w-4" />
+							</Button>
+							<Button
+								variant="outline"
+								size="icon"
+								className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+								onClick={() =>
+									handleDeleteTransactionLine(
+										form.getFieldValue(
+											`transactionLines[${index}].transactionLinesId`,
+										),
+									)
+								}
+							>
+								<TrashIcon className="h-4 w-4" />
+							</Button>
+						</div>
 					</CardAction>
 				</CardHeader>
 				<CardContent>

@@ -565,3 +565,88 @@ export async function printSummaryOnly(
 		};
 	}
 }
+
+// ─── Single-line print ──────────────────────────────────────
+
+/**
+ * Print receipt for a single transaction line only.
+ * Prints farmer receipt (always) + employee receipt (if split/harvestRate).
+ * No summary receipts.
+ */
+export async function printSingleLineReceipt(
+	transactionData: PrintSummaryData,
+	transactionLineId: string,
+): Promise<
+	| { result: "print done" }
+	| { result: "print fail"; error: { message: string } }
+> {
+	const line = transactionData.lines.find(
+		(l) => l._id === transactionLineId,
+	);
+	if (!line) {
+		return {
+			result: "print fail",
+			error: { message: "Transaction line not found" },
+		};
+	}
+
+	printer.clear();
+	printer.setCharacterSet("TIS18_THAI");
+	const { dateThai, time } = formatDateThaiConvex(
+		transactionData.transactionGroup._creationTime,
+	);
+	const farmerName = transactionData.farmer?.displayName;
+	const groupName = transactionData.transactionGroup.groupName;
+	const headerBase = { farmerName, dateThai, time, groupName };
+
+	const texts = summaryTransactionTextFromConvex(line);
+	const hasEmployee = line.isSplit !== "none" || line.isHarvestRate;
+
+	// Farmer receipt (always printed)
+	printShopHeader(printer, { ...headerBase, productName: line.productName });
+	if (line.isVehicle) {
+		printVehicleSection(printer, line);
+	}
+	printSummaryAmount(printer, texts.summaryCalculateText);
+	printFarmerBreakdown(printer, line, texts);
+	if (line.promotionTo === "sum" && line.promotionAmount) {
+		printer.setTextSize(0, 0);
+		printer.println(texts.promotionRateText);
+		printer.println(texts.promotionAmountText);
+		printer.setTextSize(1, 1);
+		printer.println(
+			`รวมค่านำส่ง:  ${(line.farmerAmount ?? 0) + (line.promotionAmount ?? 0)}`,
+		);
+		printer.setTextSize(0, 0);
+		printer.println("");
+	}
+	if (hasEmployee) {
+		printer.println(`คนตัด: ${line.employeeDisplayName}`);
+	}
+	printer.partialCut();
+
+	// Employee receipt (only when employee is involved)
+	if (hasEmployee) {
+		printShopHeader(printer, {
+			...headerBase,
+			productName: line.productName,
+		});
+		if (line.isVehicle) {
+			printVehicleSection(printer, line, { boldWeight: true });
+		}
+		printSummaryAmount(printer, texts.summaryCalculateText);
+		printEmployeeBreakdown(printer, line, texts);
+		printer.println(`คนตัด: ${line.employeeDisplayName}`);
+		printer.partialCut();
+	}
+
+	try {
+		await printer.execute();
+		return { result: "print done" };
+	} catch (e) {
+		return {
+			result: "print fail",
+			error: { message: e instanceof Error ? e.message : String(e) },
+		};
+	}
+}

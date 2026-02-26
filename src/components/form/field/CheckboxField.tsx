@@ -21,7 +21,7 @@ export function CheckboxField({
 				checked={field.state.value}
 				onCheckedChange={(checked: boolean) => field.handleChange(checked)}
 			/>
-			<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+			<FieldLabel htmlFor={field.name} className="cursor-pointer">{label}</FieldLabel>
 			{isInvalid && <p>{field.state.meta.errors[0]}</p>}
 		</Field>
 	);
