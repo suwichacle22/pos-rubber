@@ -47,11 +47,17 @@ export default defineSchema({
 		employeeId: v.id("employees"),
 		productId: v.id("products"),
 		splitType: productSplitType,
+		isSplit: v.optional(productSplitFarmerEmployeeType),
 		farmerSplitRatio: v.optional(v.number()),
 		employeeSplitRatio: v.optional(v.number()),
+		isHarvestRate: v.optional(v.boolean()),
 		harvestRate: v.optional(v.number()),
-		promotionTo: v.optional(customerType),
+		isTransportationFee: v.optional(v.boolean()),
 		transportationFee: v.optional(v.number()),
+		promotionTo: v.optional(promotionType),
+		promotionRate: v.optional(v.number()),
+		farmerPaidType: v.optional(paidType),
+		employeePaidType: v.optional(paidType),
 	})
 		.index("by_employeeId", ["employeeId"])
 		.index("by_productId", ["productId"])

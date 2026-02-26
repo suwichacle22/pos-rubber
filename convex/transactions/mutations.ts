@@ -4,6 +4,7 @@ import { ConvexError, v } from "convex/values";
 import {
 	paidType,
 	productSplitFarmerEmployeeType,
+	productSplitType,
 	promotionType,
 } from "../schema";
 
@@ -277,5 +278,92 @@ export const updateTransactionLine = mutation({
 			results.push(await db.get(transactionLineId));
 		}
 		return results;
+	},
+});
+
+export const upsertSplitDefaultIfMissing = mutation({
+	args: {
+		employeeId: v.id("employees"),
+		productId: v.id("products"),
+		splitType: productSplitType,
+		isSplit: v.optional(productSplitFarmerEmployeeType),
+		farmerSplitRatio: v.optional(v.number()),
+		employeeSplitRatio: v.optional(v.number()),
+		isHarvestRate: v.optional(v.boolean()),
+		harvestRate: v.optional(v.number()),
+		isTransportationFee: v.optional(v.boolean()),
+		transportationFee: v.optional(v.number()),
+		promotionTo: v.optional(promotionType),
+		promotionRate: v.optional(v.number()),
+		farmerPaidType: v.optional(paidType),
+		employeePaidType: v.optional(paidType),
+	},
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		const existing = await db
+			.query("splitDefaults")
+			.withIndex("by_employeeId_and_productId", (q) =>
+				q
+					.eq("employeeId", args.employeeId)
+					.eq("productId", args.productId),
+			)
+			.unique();
+		if (existing) {
+			return { created: false };
+		}
+		const id = await db.insert("splitDefaults", {
+			employeeId: args.employeeId,
+			productId: args.productId,
+			splitType: args.splitType,
+			isSplit: args.isSplit,
+			farmerSplitRatio: args.farmerSplitRatio,
+			employeeSplitRatio: args.employeeSplitRatio,
+			isHarvestRate: args.isHarvestRate,
+			harvestRate: args.harvestRate,
+			isTransportationFee: args.isTransportationFee,
+			transportationFee: args.transportationFee,
+			promotionTo: args.promotionTo,
+			promotionRate: args.promotionRate,
+			farmerPaidType: args.farmerPaidType,
+			employeePaidType: args.employeePaidType,
+		});
+		return { created: true, id };
+	},
+});
+
+export const updateSplitDefault = mutation({
+	args: {
+		splitDefaultId: v.id("splitDefaults"),
+		isSplit: v.optional(productSplitFarmerEmployeeType),
+		farmerSplitRatio: v.optional(v.number()),
+		employeeSplitRatio: v.optional(v.number()),
+		isHarvestRate: v.optional(v.boolean()),
+		harvestRate: v.optional(v.number()),
+		isTransportationFee: v.optional(v.boolean()),
+		transportationFee: v.optional(v.number()),
+		promotionTo: v.optional(promotionType),
+		promotionRate: v.optional(v.number()),
+		farmerPaidType: v.optional(paidType),
+		employeePaidType: v.optional(paidType),
+	},
+	returns: v.null(),
+	handler: async ({ db }, args) => {
+		const { splitDefaultId, ...fields } = args;
+		const existing = await db.get(splitDefaultId);
+		if (!existing) throw new Error("Split default not found");
+		const splitType = fields.isHarvestRate ? "per_kg" as const : "percentage" as const;
+		await db.patch(splitDefaultId, { ...fields, splitType });
+		return null;
+	},
+});
+
+export const deleteSplitDefault = mutation({
+	args: {
+		splitDefaultId: v.id("splitDefaults"),
+	},
+	returns: v.null(),
+	handler: async ({ db }, args) => {
+		await db.delete(args.splitDefaultId);
+		return null;
 	},
 });

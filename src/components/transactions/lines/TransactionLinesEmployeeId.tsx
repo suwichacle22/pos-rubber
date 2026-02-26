@@ -3,9 +3,10 @@ import { FieldGroup } from "@/components/ui/field";
 import { transactionFormOptions } from "@/utils/transaction.schema";
 import { toast } from "sonner";
 import { useStore } from "@tanstack/react-store";
-import { useMutation, useQuery } from "convex/react";
+import { useConvex, useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
+import { applySplitDefaultToLine } from "@/utils/splitDefault";
 
 export const TransactionLinesEmployeeId = withForm({
 	...transactionFormOptions,
@@ -13,6 +14,7 @@ export const TransactionLinesEmployeeId = withForm({
 		index: 0,
 	},
 	render: function Render({ form, index }) {
+		const convex = useConvex();
 		const farmerId = useStore(
 			form.store,
 			(state) => state.values.transactionGroup.farmerId,
@@ -55,6 +57,26 @@ export const TransactionLinesEmployeeId = withForm({
 								return "กรุณาใส่ชื่อลูกค้า";
 							}
 							return;
+						},
+					}}
+					listeners={{
+						onChange: async ({ value }) => {
+							if (!value) return;
+							const productId = form.getFieldValue(
+								`transactionLines[${index}].productId`,
+							);
+							if (!productId) return;
+							const splitDefault = await convex.query(
+								api.transactions.queries
+									.getSplitDefaultByEmployeeAndProduct,
+								{
+									employeeId: value as Id<"employees">,
+									productId: productId as Id<"products">,
+								},
+							);
+							if (splitDefault) {
+								applySplitDefaultToLine(splitDefault, form, index);
+							}
 						},
 					}}
 					children={(field) => (

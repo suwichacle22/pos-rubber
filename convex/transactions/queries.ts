@@ -393,3 +393,40 @@ export const getLatestPalmPrice = query({
 		return latestPrice?.price ?? null;
 	},
 });
+
+export const getSplitDefaultByEmployeeAndProduct = query({
+	args: {
+		employeeId: v.id("employees"),
+		productId: v.id("products"),
+	},
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		return await db
+			.query("splitDefaults")
+			.withIndex("by_employeeId_and_productId", (q) =>
+				q
+					.eq("employeeId", args.employeeId)
+					.eq("productId", args.productId),
+			)
+			.unique();
+	},
+});
+
+export const getSplitDefaultsByEmployeeId = query({
+	args: { employeeId: v.id("employees") },
+	returns: v.any(),
+	handler: async ({ db }, args) => {
+		const defaults = await db
+			.query("splitDefaults")
+			.withIndex("by_employeeId", (q) =>
+				q.eq("employeeId", args.employeeId),
+			)
+			.collect();
+		return Promise.all(
+			defaults.map(async (d) => {
+				const product = await db.get(d.productId);
+				return { ...d, productName: product?.productName ?? "Unknown" };
+			}),
+		);
+	},
+});

@@ -15,10 +15,12 @@ import { Button } from "@/components/ui/button";
 import { TrashIcon } from "lucide-react";
 import { TransactionLineTransportFee } from "./TransactionLinesTransportFee";
 import { TransactionLineHarvestRate } from "./TransactionLinesHarvestRate";
-import { useQuery } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
+import type { Id } from "convex/_generated/dataModel";
 import { config } from "@/utils/config";
 import { calculateTotalAmount } from "@/utils/utils";
+import { applySplitDefaultToLine } from "@/utils/splitDefault";
 
 export const TransactionLine = withForm({
 	...transactionFormOptions,
@@ -33,6 +35,7 @@ export const TransactionLine = withForm({
 		selectProductsData,
 		handleDeleteTransactionLine,
 	}) {
+		const convex = useConvex();
 		const productPalmId = useQuery(api.transactions.queries.getProductPalmIds);
 		const latestPalmPrice = useQuery(api.transactions.queries.getLatestPalmPrice);
 		return (
@@ -68,32 +71,55 @@ export const TransactionLine = withForm({
 								},
 							}}
 							listeners={{
-								onChange: ({ value }) => {
+								onChange: async ({ value }) => {
 									if (!value) return;
+									// Palm price auto-fill
 									const isPalm = productPalmId?.some(
 										(p) => p._id === value,
 									);
-									if (!isPalm || latestPalmPrice == null) return;
+									if (isPalm && latestPalmPrice != null) {
+										const isPalmRuang =
+											value === config.product.palmRuangProductId;
+										const price = isPalmRuang
+											? (latestPalmPrice + 0.5).toString()
+											: latestPalmPrice.toString();
 
-									const isPalmRuang =
-										value === config.product.palmRuangProductId;
-									const price = isPalmRuang
-										? (latestPalmPrice + 0.5).toString()
-										: latestPalmPrice.toString();
+										form.setFieldValue(
+											`transactionLines[${index}].price`,
+											price,
+										);
 
-									form.setFieldValue(
-										`transactionLines[${index}].price`,
-										price,
-									);
+										// Trigger calculation cascade
+										const weight = form.getFieldValue(
+											`transactionLines[${index}].weight`,
+										);
+										form.setFieldValue(
+											`transactionLines[${index}].totalAmount`,
+											calculateTotalAmount(weight, price),
+										);
+									}
 
-									// Trigger calculation cascade
-									const weight = form.getFieldValue(
-										`transactionLines[${index}].weight`,
+									// Split default autofill
+									const employeeId = form.getFieldValue(
+										`transactionLines[${index}].employeeId`,
 									);
-									form.setFieldValue(
-										`transactionLines[${index}].totalAmount`,
-										calculateTotalAmount(weight, price),
-									);
+									if (employeeId) {
+										const splitDefault = await convex.query(
+											api.transactions.queries
+												.getSplitDefaultByEmployeeAndProduct,
+											{
+												employeeId: employeeId as Id<"employees">,
+												productId: value as Id<"products">,
+											},
+										);
+										if (splitDefault) {
+											applySplitDefaultToLine(
+												splitDefault,
+												form,
+												index,
+											);
+										}
+									}
 								},
 							}}
 							children={(field) => (

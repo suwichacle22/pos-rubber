@@ -19,7 +19,11 @@
       "Bash(npx tsc:*)",
       "mcp__Claude_Preview__preview_start",
       "Bash(where:*)",
-      "Bash(bunx --bun shadcn@latest add:*)"
+      "Bash(bunx --bun shadcn@latest add:*)",
+      "Bash(xxd \"C:/Suwi/Projects/pos-rubber/src/components/farmer/FarmerCard.tsx\")",
+      "Bash(git stash)",
+      "Bash(npx vinxi build)",
+      "Bash(git stash pop)"
     ]
   }
 }

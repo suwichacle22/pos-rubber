@@ -4,6 +4,7 @@ import { routerWithQueryClient } from "@tanstack/react-router-with-query";
 import { ConvexQueryClient } from "@convex-dev/react-query";
 import { ConvexProvider } from "convex/react";
 import { routeTree } from "./routeTree.gen";
+import { Spinner } from "./components/ui/spinner";
 
 export function getRouter() {
 	const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
@@ -26,6 +27,12 @@ export function getRouter() {
 		createRouter({
 			routeTree,
 			defaultPreload: "intent",
+			defaultPendingComponent: () => (
+				<div className="flex flex-col items-center justify-center gap-2 py-20">
+					<Spinner className="size-8" />
+					<p className="text-sm text-muted-foreground">กำลังโหลด</p>
+				</div>
+			),
 			context: { queryClient },
 			scrollRestoration: true,
 			Wrap: ({ children }) => (

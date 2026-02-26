@@ -11,6 +11,7 @@ import {
 	CardTitle,
 } from "../ui/card";
 import { formatDateThaiConvex } from "@/utils/utils";
+import EmployeeSplitDefaults from "./EmployeeSplitDefaults";
 
 export default function FarmerCard({
 	farmerData,
@@ -51,6 +52,7 @@ export default function FarmerCard({
 											เบอร์โทร: {employee.phone}
 										</p>
 									)}
+									<EmployeeSplitDefaults employeeId={employee._id} />
 								</div>
 							))}
 						</div>

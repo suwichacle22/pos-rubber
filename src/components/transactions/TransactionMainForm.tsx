@@ -62,6 +62,9 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 	const deleteTransactionLine = useMutation(
 		api.transactions.mutations.deleteTransactionLine,
 	);
+	const upsertSplitDefault = useMutation(
+		api.transactions.mutations.upsertSplitDefaultIfMissing,
+	);
 
 	const handleDeleteTransactionLine = async (
 		transactionLineId: string,
@@ -139,6 +142,33 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 			await updateTransactionLine({
 				transactionLines: parsedLines,
 			});
+			// Save split defaults on explicit submit (not auto-sync)
+			if (meta.submitAction !== null) {
+				try {
+					for (const line of value.transactionLines) {
+						if (line.employeeId && line.productId) {
+							await upsertSplitDefault({
+								employeeId: line.employeeId as Id<"employees">,
+								productId: line.productId as Id<"products">,
+								splitType: line.isHarvestRate ? "per_kg" : "percentage",
+								isSplit: (line.isSplit as "none" | "6/4" | "55/45" | "1/2" | "58/42" | "custom") || "none",
+								isHarvestRate: line.isHarvestRate || false,
+								farmerSplitRatio: line.farmerRatio ? Number.parseFloat(line.farmerRatio) : undefined,
+								employeeSplitRatio: line.employeeRatio ? Number.parseFloat(line.employeeRatio) : undefined,
+								harvestRate: line.harvestRate ? Number.parseFloat(line.harvestRate) : undefined,
+								isTransportationFee: line.isTransportationFee || false,
+								transportationFee: line.transportationFee ? Number.parseFloat(line.transportationFee) : undefined,
+								promotionTo: (line.promotionTo as "sum" | "split") || undefined,
+								promotionRate: line.promotionRate ? Number.parseFloat(line.promotionRate) : undefined,
+								farmerPaidType: (line.farmerPaidType as "cash" | "bank transfer") || undefined,
+								employeePaidType: (line.employeePaidType as "cash" | "bank transfer") || undefined,
+							});
+						}
+					}
+				} catch {
+					// Don't block submit on split default creation failure
+				}
+			}
 			if (meta.submitAction === "pending") {
 				navigate({ to: "/transactions" });
 			}
