@@ -1,18 +1,18 @@
 # ---------- Build stage ----------
-FROM oven/bun:latest AS builder
+FROM oven/bun:1.3.0 AS builder
 WORKDIR /app
 
 ARG VITE_CONVEX_URL
 ENV VITE_CONVEX_URL=$VITE_CONVEX_URL
 
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN bun install
 
 COPY . .
 RUN bun run build
 
 # ---------- Runtime stage ----------
-FROM oven/bun:latest
+FROM oven/bun:1.3.0
 WORKDIR /app
 
 COPY --from=builder /app/.output ./.output

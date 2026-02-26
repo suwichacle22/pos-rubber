@@ -48,7 +48,7 @@ export function FarmerForm() {
 				form.handleSubmit();
 			}}
 		>
-			<Card className="min-w-[380px] md:min-w-[660px]">
+			<Card className="w-full">
 				<CardHeader>
 					<CardTitle>เพิ่มเกษตรกร</CardTitle>
 				</CardHeader>
