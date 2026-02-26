@@ -12,13 +12,17 @@ import Header from "../components/nav/Header";
 
 import ReactQueryDevtools from "../integrations/tanstack-query/devtools";
 
-import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
+import {
+	FormDevtoolsPanel,
+	formDevtoolsPlugin,
+} from "@tanstack/react-form-devtools";
 
 import appCss from "../styles.css?url";
 
 import type { QueryClient } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -75,8 +79,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 							name: "Tanstack Router",
 							render: <TanStackRouterDevtoolsPanel />,
 						},
-						ReactQueryDevtools,
-						formDevtoolsPlugin(),
+						{ name: "Tanstack Query", render: <ReactQueryDevtoolsPanel /> },
+						{ name: "Tanstack Form", render: <FormDevtoolsPanel /> },
 					]}
 				/>
 				<Scripts />
