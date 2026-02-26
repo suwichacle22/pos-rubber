@@ -19,7 +19,7 @@ type SummaryTexts = ReturnType<typeof summaryTransactionTextFromConvex>;
 
 const printer = new ThermalPrinter({
 	type: PrinterTypes.EPSON,
-	interface: "tcp://192.168.1.181",
+	interface: process.env.PRINTER_INTERFACE ?? "tcp://192.168.1.181",
 	width: 42,
 });
 
@@ -203,7 +203,7 @@ function printProductSummary(
 		};
 		existing.totalWeight += line.weight ?? 0;
 		existing.price = line.price ?? 0;
-		existing.totalAmount += line.totalNetAmount ?? line.totalAmount ?? 0;
+		existing.totalAmount += line.totalAmount ?? 0;
 		existing.farmerAmount +=
 			line.isTransportationFee && line.transportationFeeFarmerAmount
 				? line.transportationFeeFarmerAmount
@@ -390,7 +390,7 @@ function printEmployeeSummary(
 			};
 			existing.totalWeight += line.weight ?? 0;
 			existing.price = line.price ?? 0;
-			existing.totalAmount += line.totalNetAmount ?? line.totalAmount ?? 0;
+			existing.totalAmount += line.totalAmount ?? 0;
 			existing.employeeAmount +=
 				line.isTransportationFee && line.transportationFeeEmployeeAmount
 					? line.transportationFeeEmployeeAmount
