@@ -12,9 +12,10 @@ import { TransactionLine } from "./lines/TransactionLinesForm";
 import { Button } from "../ui/button";
 import { PlusIcon } from "lucide-react";
 import { SubmitLoading } from "../form/component/SubmitLoading";
-import { useStore } from "@tanstack/react-store";
+
 import TransactionSummary from "./group/TransactionSummary";
 import { TransactionPalmGroup } from "./group/TransactionPalmGroup";
+import { config } from "@/utils/config";
 import { api } from "convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import type { Id } from "convex/_generated/dataModel";
@@ -28,6 +29,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { useStore } from "@tanstack/react-form";
 
 type FormMeta = {
 	submitAction: "pending" | "submitted" | "print" | "printSummary" | null;
@@ -46,7 +48,9 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 	const navigate = useNavigate();
 	const productsFormData = useQuery(api.transactions.queries.getProductForm);
 	const palmProductIds = useQuery(api.transactions.queries.getProductPalmIds);
-	const farmerId = transactionData.transactionGroup?.farmerId as Id<"farmers"> | undefined;
+	const farmerId = transactionData.transactionGroup?.farmerId as
+		| Id<"farmers">
+		| undefined;
 	const employeesFormData = useQuery(
 		api.transactions.queries.getEmployeesByFarmerIdForm,
 		farmerId ? { farmerId } : "skip",
@@ -178,17 +182,38 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 								employeeId: line.employeeId as Id<"employees">,
 								productId: line.productId as Id<"products">,
 								splitType: line.isHarvestRate ? "per_kg" : "percentage",
-								isSplit: (line.isSplit as "none" | "6/4" | "55/45" | "1/2" | "58/42" | "custom") || "none",
+								isSplit:
+									(line.isSplit as
+										| "none"
+										| "6/4"
+										| "55/45"
+										| "1/2"
+										| "58/42"
+										| "custom") || "none",
 								isHarvestRate: line.isHarvestRate || false,
-								farmerSplitRatio: line.farmerRatio ? Number.parseFloat(line.farmerRatio) : undefined,
-								employeeSplitRatio: line.employeeRatio ? Number.parseFloat(line.employeeRatio) : undefined,
-								harvestRate: line.harvestRate ? Number.parseFloat(line.harvestRate) : undefined,
+								farmerSplitRatio: line.farmerRatio
+									? Number.parseFloat(line.farmerRatio)
+									: undefined,
+								employeeSplitRatio: line.employeeRatio
+									? Number.parseFloat(line.employeeRatio)
+									: undefined,
+								harvestRate: line.harvestRate
+									? Number.parseFloat(line.harvestRate)
+									: undefined,
 								isTransportationFee: line.isTransportationFee || false,
-								transportationFee: line.transportationFee ? Number.parseFloat(line.transportationFee) : undefined,
+								transportationFee: line.transportationFee
+									? Number.parseFloat(line.transportationFee)
+									: undefined,
 								promotionTo: (line.promotionTo as "sum" | "split") || undefined,
-								promotionRate: line.promotionRate ? Number.parseFloat(line.promotionRate) : undefined,
-								farmerPaidType: (line.farmerPaidType as "cash" | "bank transfer") || undefined,
-								employeePaidType: (line.employeePaidType as "cash" | "bank transfer") || undefined,
+								promotionRate: line.promotionRate
+									? Number.parseFloat(line.promotionRate)
+									: undefined,
+								farmerPaidType:
+									(line.farmerPaidType as "cash" | "bank transfer") ||
+									undefined,
+								employeePaidType:
+									(line.employeePaidType as "cash" | "bank transfer") ||
+									undefined,
 							});
 						}
 					}
@@ -313,7 +338,16 @@ export function TransactionMainFormNew({ groupId }: { groupId: string }) {
 					</form.AppField>
 					{LinesData.some((line) =>
 						palmProductIds?.some((product) => product._id === line.productId),
-					) && <TransactionPalmGroup form={form} />}
+					) && (
+						<TransactionPalmGroup
+							form={form}
+							palmProductId={
+								palmProductIds?.find(
+									(p) => p.productName === config.product.palmProductName,
+								)?._id ?? ""
+							}
+						/>
+					)}
 					{LinesData.length > 1 && (
 						<TransactionSummary
 							lines={LinesData}

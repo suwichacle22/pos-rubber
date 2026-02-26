@@ -5,7 +5,7 @@ import {
 	transactionFormOptions,
 } from "@/utils/transaction.schema";
 import { calculateVehicleWeight } from "@/utils/utils";
-import { useStore } from "@tanstack/react-store";
+import { useStore } from "@tanstack/react-form";
 import { api } from "convex/_generated/api";
 import { Id } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";

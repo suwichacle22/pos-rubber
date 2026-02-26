@@ -11,11 +11,7 @@ import {
 	calculatePromotionAmount,
 	calculateTransactionTotalNetAmount,
 } from "@/utils/utils";
-import { api } from "convex/_generated/api";
-import type { Id } from "convex/_generated/dataModel";
-import { useQuery } from "convex/react";
 import { TransactionGroupEmployeeId } from "./TransactionGroupEmployeeId";
-import { config } from "@/utils/config";
 
 function getPalmLineIndices(
 	lines: { productId: string }[],
@@ -28,8 +24,8 @@ function getPalmLineIndices(
 
 export const TransactionPalmGroup = withForm({
 	...transactionFormOptions,
-	render: function Render({ form }) {
-		const palmProductId = config.product.palmProductId;
+	props: { palmProductId: "" },
+	render: function Render({ form, palmProductId }) {
 		const cardRef = useRef<HTMLDivElement>(null);
 		const spreadToPalmLines = (
 			field:

@@ -2,7 +2,7 @@ import { withForm } from "@/components/form/formContext";
 import { FieldGroup } from "@/components/ui/field";
 import { transactionFormOptions } from "@/utils/transaction.schema";
 import { toast } from "sonner";
-import { useStore } from "@tanstack/react-store";
+import { useStore } from "@tanstack/react-form";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";

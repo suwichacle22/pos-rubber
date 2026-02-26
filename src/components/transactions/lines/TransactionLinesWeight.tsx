@@ -5,7 +5,7 @@ import {
 	transactionFormOptions,
 } from "@/utils/transaction.schema";
 import { calculateSplitAmount, calculateTotalAmount, calculateTransactionTotalNetAmount } from "@/utils/utils";
-import { useStore } from "@tanstack/react-store";
+import { useStore } from "@tanstack/react-form";
 
 export const TransactionLineWeight = withForm({
 	...transactionFormOptions,

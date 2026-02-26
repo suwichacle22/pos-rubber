@@ -36,7 +36,8 @@
       "Bash(node -e \":*)",
       "Bash(npm ls vinxi)",
       "Bash(npm ls vinxi --all)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(bun update @tanstack/react-form @tanstack/form-core @tanstack/react-form-devtools)"
     ]
   }
 }

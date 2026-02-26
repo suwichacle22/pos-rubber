@@ -97,7 +97,7 @@ export const TransactionLine = withForm({
 									);
 									if (isPalm && latestPalmPrice != null) {
 										const isPalmRuang =
-											value === config.product.palmRuangProductId;
+											productPalmId?.find((p) => p._id === value)?.productName === config.product.palmRuangProductName;
 										const price = isPalmRuang
 											? (latestPalmPrice + 0.5).toString()
 											: latestPalmPrice.toString();

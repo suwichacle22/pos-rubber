@@ -383,11 +383,16 @@ export const getLatestPalmPrice = query({
 	args: {},
 	returns: v.union(v.number(), v.null()),
 	handler: async ({ db }) => {
-		const palmProductId =
-			"jn7fxvxkm44zdsf81tkxajn6wh81hdg5" as Id<"products">;
+		const palmProduct = await db
+			.query("products")
+			.filter((q) => q.eq(q.field("productName"), "ปาล์ม"))
+			.first();
+		if (!palmProduct) return null;
 		const latestPrice = await db
 			.query("productPrices")
-			.withIndex("by_productId", (q) => q.eq("productId", palmProductId))
+			.withIndex("by_productId", (q) =>
+				q.eq("productId", palmProduct._id),
+			)
 			.order("desc")
 			.first();
 		return latestPrice?.price ?? null;
