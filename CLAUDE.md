@@ -103,7 +103,8 @@ Farmer gets = Total - Harvester amount
 - Transaction locks in price at time of sale
 - If not set today, use latest price
 - Price history kept for reference
-- **Palm price auto-fill (implemented):** Selecting a palm product auto-fills latest palm price via `getLatestPalmPrice` query; ปาล์มร่วง adds +0.5 to base palm price
+- **Palm price auto-fill (implemented):** Selecting a palm product auto-fills latest palm price via `getLatestPalmPrice` query (finds product by `productName === "ปาล์ม"`, no hardcoded IDs); ปาล์มร่วง adds +0.5 to base palm price
+- **Palm product identification:** `src/utils/config.ts` uses product names (`palmProductName: "ปาล์ม"`, `palmRuangProductName: "ปาล์มร่วง"`), NOT hardcoded Convex IDs. `getProductPalmIds` query returns products where name includes "ปาล์ม".
 - TODO: Auto-fill price for rubber/other products when selected
 
 ### 8. Transaction Groups
@@ -121,11 +122,13 @@ Farmer gets = Total - Harvester amount
 - User can return and continue editing via groupId
 - Simple edit allowed — trust-based family system
 
-### 10. Split Defaults (TODO: not yet implemented)
+### 10. Split Defaults (Implemented)
 
-- Saved on first transaction for each employee-product
-- Auto-fill on subsequent transactions
-- Editable in employee settings screen
+- `upsertSplitDefaultIfMissing` saves defaults on first transaction per employee-product
+- Only creates if record is missing — does NOT overwrite existing defaults on subsequent transactions
+- Triggered on pending/submitted/print actions (not on auto-sync)
+- Auto-fills on subsequent transactions when employee + product match
+- Viewable on `/farmer` route under each employee via `EmployeeSplitDefaults` component
 - Can override per transaction without changing default
 
 ### 11. Inline Creation
@@ -239,6 +242,7 @@ product (1) ──→ (many) transaction_line
 ### Cascade Delete
 
 - `deleteTransactionGroup` cascades: deletes all transaction lines by groupId before deleting the group
+- `deleteProduct` and `deleteFarmer` — simple delete, no cascade (orphan children acceptable for family business)
 
 ### isSplit / isHarvestRate Clearing Behavior
 
@@ -252,6 +256,28 @@ product (1) ──→ (many) transaction_line
 - Index route (`/`) uses date range picker (startDate/endDate) instead of single date
 
 ---
+### Per-Line Printing
+
+- `printSingleLineReceipt()` in `transactions.server.ts` — prints farmer + employee receipt for a single line
+- `getPrintTransactionLine` server function in `transaction.functions.ts`
+- Print icon button on each transaction line card (next to delete icon)
+
+### Router — Loading State
+
+- `defaultPendingComponent` in `src/router.tsx` — shows Spinner + "กำลังโหลด" centered during route transitions
+
+---
+
+### Deployment & Docker
+
+- **Build:** `bun run build` (maps to `vite build`, NOT vinxi)
+- **SPA mode forces prerender** → prerender can't start Vite preview server inside Docker → **build locally, use Docker for runtime only**
+- **Dockerfile:** `oven/bun:1.3.0`, needs `VITE_CONVEX_URL` as build arg (`docker build --build-arg VITE_CONVEX_URL=http://192.168.1.17:3210 .`)
+- **Production Convex:** `npx convex deploy` (manual, run when Convex functions change)
+- **`package.json` overrides:** `@tanstack/store` and `@tanstack/react-store` pinned to `0.9.1` to fix version conflict between form-core and router-core
+- **Start script:** `node .output/server/index.mjs` (or `bun .output/server/index.mjs`)
+- **Workflow:** `npm run build` on PC → `docker build` → `docker save` to `.tar` → import to Synology NAS
+
 ### Future (v2)
 
 - Factory sales table
@@ -502,7 +528,7 @@ Guide them to discover answers, don't hand them solutions.
 import { printer as ThermalPrinter, types as PrinterTypes, characterSet } from "node-thermal-printer"
 let printer = new ThermalPrinter({
         type: PrinterTypes.EPSON,
-        interface: 'tcp://192.168.1.181',
+        interface: process.env.PRINTER_INTERFACE ?? 'tcp://192.168.1.181',
 
     })
 
@@ -516,4 +542,4 @@ let printer = new ThermalPrinter({
 
 before implement anything about receipt printer read from doc node-thermal-printer-doc.md
 
-192.168.1.181 this is ip of my printer
+192.168.1.181 this is ip of my printer (configured via `PRINTER_INTERFACE` env var in `.env`, fallback to `tcp://192.168.1.181`)
