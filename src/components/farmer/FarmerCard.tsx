@@ -4,6 +4,7 @@ import { EmployeeForm } from "@/components/employee/EmployeeForm";
 import { Button } from "../ui/button";
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardFooter,
@@ -12,6 +13,9 @@ import {
 } from "../ui/card";
 import { formatDateThaiConvex } from "@/utils/utils";
 import EmployeeSplitDefaults from "./EmployeeSplitDefaults";
+import { TrashIcon } from "lucide-react";
+import { useMutation } from "convex/react";
+import { api } from "convex/_generated/api";
 
 export default function FarmerCard({
 	farmerData,
@@ -19,11 +23,22 @@ export default function FarmerCard({
 	farmerData: FarmerWithEmployeesById;
 }) {
 	const [showAddEmployee, setShowAddEmployee] = useState(false);
+	const deleteFarmer = useMutation(api.transactions.mutations.deleteFarmer);
 
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>{farmerData.displayName}</CardTitle>
+				<CardAction>
+					<Button
+						variant="outline"
+						size="icon"
+						className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+						onClick={() => deleteFarmer({ farmerId: farmerData._id })}
+					>
+						<TrashIcon className="h-4 w-4" />
+					</Button>
+				</CardAction>
 				<CardDescription>
 					{(() => {
 						const { dateThai, time } = formatDateThaiConvex(farmerData._creationTime);

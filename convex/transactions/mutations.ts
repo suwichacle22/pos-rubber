@@ -367,3 +367,25 @@ export const deleteSplitDefault = mutation({
 		return null;
 	},
 });
+
+export const deleteProduct = mutation({
+	args: {
+		productId: v.id("products"),
+	},
+	returns: v.null(),
+	handler: async ({ db }, args) => {
+		await db.delete(args.productId);
+		return null;
+	},
+});
+
+export const deleteFarmer = mutation({
+	args: {
+		farmerId: v.id("farmers"),
+	},
+	returns: v.null(),
+	handler: async ({ db }, args) => {
+		await db.delete(args.farmerId);
+		return null;
+	},
+});

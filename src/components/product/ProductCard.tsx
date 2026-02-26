@@ -4,6 +4,7 @@ import { useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardFooter,
 	CardHeader,
@@ -13,6 +14,8 @@ import { ProductPriceForm } from "./ProductPriceForm";
 import { formatDateThaiConvex } from "@/utils/utils";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { Button } from "../ui/button";
+import { TrashIcon } from "lucide-react";
 
 export default function ProductCard({
 	productData,
@@ -27,6 +30,7 @@ export default function ProductCard({
 	};
 }) {
 	const updateProduct = useMutation(api.transactions.mutations.updateProduct);
+	const deleteProduct = useMutation(api.transactions.mutations.deleteProduct);
 	const [productLines, setProductLines] = useState(
 		productData.productLines != null ? String(productData.productLines) : "",
 	);
@@ -42,6 +46,16 @@ export default function ProductCard({
 		<Card className="min-w-[380px] md:min-w-[660px]">
 			<CardHeader>
 				<CardTitle>{productData.productName}</CardTitle>
+				<CardAction>
+					<Button
+						variant="outline"
+						size="icon"
+						className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+						onClick={() => deleteProduct({ productId: productData._id })}
+					>
+						<TrashIcon className="h-4 w-4" />
+					</Button>
+				</CardAction>
 			</CardHeader>
 			<CardContent className="space-y-2">
 				<div className="flex items-center gap-2">
